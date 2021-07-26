@@ -107,7 +107,7 @@ const crcChars = crc32.Size * 2 // 2 since 2 chars per raw byte
 func checksum(ft ftype, path string) (chksum string) {
 	defer func() {
 		if e := recover(); e != nil || chksum == "" {
-			chksum = fmt.Sprintf("%-*s", crcChars, notApplicable)
+			chksum = checksumNA()
 		}
 	}()
 
@@ -127,6 +127,10 @@ func checksum(ft ftype, path string) (chksum string) {
 
 	chksum = fmt.Sprintf("%0*x", crcChars, h.Sum32())
 	return
+}
+
+func checksumNA() string {
+	return fmt.Sprintf("%-*s", crcChars, notApplicable)
 }
 
 // format prints the name

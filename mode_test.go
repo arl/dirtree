@@ -138,3 +138,11 @@ func TestPrintMode_format(t *testing.T) {
 		})
 	}
 }
+
+func Test_checksumENOENT(t *testing.T) {
+	notexist := filepath.Join(t.TempDir(), "notexist")
+	got := checksum(typeFile, notexist)
+	if got != checksumNA() {
+		t.Errorf("checksum() = %v, want %v", got, checksumNA())
+	}
+}
