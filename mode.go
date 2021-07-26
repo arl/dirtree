@@ -18,12 +18,12 @@ type PrintMode uint32
 
 const (
 	// ModeType indicates if file is a directory, a regular file or something
-	// else. It prints "typ=d", "typ=f" or "typ=?" respectively.
+	// else. It prints 'd', 'f' or '?' respectively.
 	ModeType PrintMode = 1 << iota
 
-	// ModeSize reports the length in bytes for regular files. For other types
-	// it shows n/a (not applicable) since the size would be system dependent.
-	// It prints "s=     1234" or "s=n/a".
+	// ModeSize reports the length in bytes for regular files, "1234b" for
+	// example, or nothing for other types where size is not applicable (it
+	// would be OS-dependent).
 	ModeSize
 
 	// ModeSymlink indicates if a file is a symlink.
@@ -35,7 +35,7 @@ const (
 	// shows n/a (i.e. not applicable). Example "crc=294a245b" or "crc=n/a"
 	ModeCRC32
 
-	// ModePerm shows the Unix permission bits, in octal. Example "perm=644".
+	// ModePerm shows the Unix permission bits, in octal. Example "644".
 	ModePerm
 
 	// ModeStd is a mask showing kind and size all standard information aout a
@@ -46,15 +46,15 @@ const (
 	ModeAll PrintMode = ModeType | ModeSize | ModeSymlink | ModePerm | ModeCRC32
 )
 
-type ftype int
+type filetype byte
 
 const (
-	typeDir ftype = iota
-	typeFile
-	typeOther
+	typeDir   filetype = 'd'
+	typeFile  filetype = 'f'
+	typeOther filetype = '?'
 )
 
-func filetype(dirent fs.DirEntry) ftype {
+func ftype(dirent fs.DirEntry) filetype {
 	switch {
 	case dirent.Type().IsDir():
 		return typeDir
@@ -65,36 +65,21 @@ func filetype(dirent fs.DirEntry) ftype {
 	}
 }
 
-func (t ftype) String() string {
-	switch t {
-	case typeDir:
-		return "d"
-	case typeFile:
-		return "f"
-	case typeOther:
-		return "?"
-	}
-
-	panic(fmt.Sprintf("invalid filetype ftype(%d)", t))
-}
-
-const notApplicable = "n/a"
-
 // we pad the size to sizeDigits, with spaces, so that for most filenames all
 // the fields are aligned. We're hoewever not going to truncate the size of bigger files
 // just to respect that rule, we're making an exception in those cases.
 const sizeDigits = 9
 
-func formatSize(size int64) string {
-	str := fmt.Sprintf("%d", size)
+func formatSize(ft filetype, size int64) string {
+	if ft != typeFile {
+		return fmt.Sprintf("%-*s", sizeDigits+1, "")
+	}
+	str := strconv.FormatInt(size, 10) + "b"
 	if len(str) > sizeDigits {
 		return str
 	}
-	return fmt.Sprintf("%-*d", sizeDigits, size)
-}
 
-func sizeNA() string {
-	return fmt.Sprintf("%-*s", sizeDigits, notApplicable)
+	return fmt.Sprintf("%-*s", sizeDigits+1, str)
 }
 
 // buffer used in io.CopyBUffer to reduce allocations
@@ -104,7 +89,7 @@ var iobuf [32 * 1024]byte
 // number of chars in hexadecimal representation of a CRC-32.
 const crcChars = crc32.Size * 2 // 2 since 2 chars per raw byte
 
-func checksum(ft ftype, path string) (chksum string) {
+func checksum(ft filetype, path string) (chksum string) {
 	defer func() {
 		if e := recover(); e != nil || chksum == "" {
 			chksum = checksumNA()
@@ -130,7 +115,8 @@ func checksum(ft ftype, path string) (chksum string) {
 }
 
 func checksumNA() string {
-	return fmt.Sprintf("%-*s", crcChars, notApplicable)
+	const na = "n/a"
+	return fmt.Sprintf("%-*s", crcChars, na)
 }
 
 // format prints the name
@@ -142,7 +128,7 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 	}()
 
 	sb := strings.Builder{}
-	ft := filetype(dirent)
+	ft := ftype(dirent)
 
 	sep := func() {
 		// Add separator between mode expressions if necessary
@@ -165,14 +151,13 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 
 	if mode&ModeType != 0 {
 		sep()
-		sb.WriteString("t=")
-		sb.WriteString(ft.String())
+		sb.WriteByte(byte(ft))
 	}
 
 	if mode&ModePerm != 0 {
 		sep()
-		sb.WriteString("perm=")
-		sb.WriteString(strconv.FormatUint(uint64(stat().Mode()&fs.ModePerm), 8))
+		perm := stat().Mode() & fs.ModePerm
+		sb.WriteString(strconv.FormatUint(uint64(perm), 8))
 	}
 
 	if mode&ModeSymlink != 0 {
@@ -187,13 +172,7 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 
 	if mode&ModeSize != 0 {
 		sep()
-		sb.WriteString("sz=")
-		switch ft {
-		case typeFile:
-			sb.WriteString(formatSize(stat().Size()))
-		default:
-			sb.WriteString(sizeNA())
-		}
+		sb.WriteString(formatSize(ft, stat().Size()))
 	}
 
 	if mode&ModeCRC32 != 0 {

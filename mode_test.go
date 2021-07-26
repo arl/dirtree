@@ -62,43 +62,43 @@ func TestPrintMode_format(t *testing.T) {
 			name: "mode=ModeType/file1",
 			mode: ModeType,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "t=f A/file1",
+			wantFormat: "f A/file1",
 		},
 		{
 			name: "mode=ModeSize/file1",
 			mode: ModeSize,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "sz=13        A/file1",
+			wantFormat: "13b        A/file1",
 		},
 		{
 			name: "mode=ModeStd/file1",
 			mode: ModeStd,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "t=f sz=13        A/file1",
+			wantFormat: "f 13b        A/file1",
 		},
 		{
 			name: "mode=ModeAll/file1",
 			mode: ModeAll,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "t=f perm=775 sym=0 sz=13        crc=0451ac5e A/file1",
+			wantFormat: "f 775 sym=0 13b        crc=0451ac5e A/file1",
 		},
 		{
 			name: "mode=ModeStd+ModeSymlink/dirA",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: dirA, dirent: newDentry(dirA),
-			wantFormat: "t=d sym=0 sz=n/a       A",
+			wantFormat: "d sym=0            A",
 		},
 		{
 			name: "mode=ModeType+ModeSymlink/symfile1",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
-			wantFormat: "t=? sym=1 sz=n/a       A/symfile1",
+			wantFormat: "? sym=1            A/symfile1",
 		},
 		{
 			name: "mode=ModeType+ModeSymlink/symdirA",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			wantFormat: "t=? sym=1 sz=n/a       A/B/symdirA",
+			wantFormat: "? sym=1            A/B/symdirA",
 		},
 		{
 			name: "mode=ModeCRC32/file1",
@@ -122,7 +122,7 @@ func TestPrintMode_format(t *testing.T) {
 			name: "mode=ModePerm/symdirA",
 			mode: ModePerm,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			wantFormat: "perm=777 A/B/symdirA",
+			wantFormat: "777 A/B/symdirA",
 		},
 	}
 	for _, tt := range tests {
@@ -140,8 +140,8 @@ func TestPrintMode_format(t *testing.T) {
 }
 
 func Test_checksumENOENT(t *testing.T) {
-	notexist := filepath.Join(t.TempDir(), "notexist")
-	got := checksum(typeFile, notexist)
+	notExist := filepath.Join(t.TempDir(), "do-not-exist")
+	got := checksum(typeFile, notExist)
 	if got != checksumNA() {
 		t.Errorf("checksum() = %v, want %v", got, checksumNA())
 	}
