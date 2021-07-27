@@ -126,7 +126,7 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 		}
 	}()
 
-	sb := strings.Builder{}
+	var sb strings.Builder
 	ft := ftype(dirent)
 
 	// Separate successive mode expressions
@@ -181,6 +181,7 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 		sb.WriteString(checksum(ft, fullpath))
 	}
 
+	// Write file name
 	sep()
 	rel, err := filepath.Rel(root, fullpath)
 	if err != nil {

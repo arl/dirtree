@@ -1,6 +1,7 @@
 package dirtree
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -27,8 +28,13 @@ func (d *dentry) Info() (fs.FileInfo, error) { return d.info, nil }
 func TestPrintMode_format(t *testing.T) {
 	root := t.TempDir()
 
-	// Create a directory structure rooted at 'root'.
-	// TODO(arl) add structure with 'tree' output
+	// Create the following directory structure rooted at 'root':
+	//	.
+	//	└── A
+	//		├── B
+	//		│   └── symdirA -> symlink to A
+	//		├── file1
+	//		└── symfile1 -> symlink to A/file1
 
 	var (
 		dirA     = filepath.Join(root, "A")
@@ -124,10 +130,19 @@ func TestPrintMode_format(t *testing.T) {
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
 			wantFormat: "777 A/B/symdirA",
 		},
+
+		// Error cases
+		{
+			name: "mode=ModePerm/do-not-exist",
+			mode: ModePerm,
+			root: root, fullpath: "do-not-exist", dirent: newDentry(symdirA),
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.mode.format(tt.root, tt.fullpath, tt.dirent)
+			fmt.Println(err)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PrintMode.format() error = %v, wantErr %v", err, tt.wantErr)
 				return
