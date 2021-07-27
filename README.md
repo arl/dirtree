@@ -8,10 +8,13 @@ Dirtree
 ========
 
 Dirtree recursively walks a directory structure and prints one line per file,
-plus additional information such as size, permissions, CRC-32 hash of files
-content, etc. Its output makes it super handy to be used as golden file, when
-testing functions which outcome is to create a directory structure with some
-files in it.
+plus additional information such as file size, permissions, a hash of file 
+content, etc. which is very useful to see at a glance the differences between
+2 directories.  
+The main use case is using Dirtree output as golden file when testing functions
+which outcome is to create files and/or directory structures.
+
+
 
 ```go
 ls, err := dirtree.Print(root, dirtree.ModeAll)
