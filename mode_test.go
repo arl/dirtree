@@ -32,15 +32,19 @@ func (d *dentry) Info() (fs.FileInfo, error) { return d.info, nil }
 //		├── file1
 //		└── symfile1 -> symlink to A/file1
 func createDirStructure(tb testing.TB, root string) (dirA, file1, symfile1, symdirA string) {
+	if err := os.Chmod(root, 0o744); err != nil {
+		tb.Fatal(err)
+	}
+
 	dirA = filepath.Join(root, "A")
 	file1 = filepath.Join(root, "A", "file1")
 	symfile1 = filepath.Join(root, "A", "symfile1")
 	symdirA = filepath.Join(root, "A", "B", "symdirA")
 
-	if err := os.MkdirAll(filepath.Join(dirA, "B"), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(dirA, "B"), 0o744); err != nil {
 		tb.Fatal(err)
 	}
-	if err := os.WriteFile(file1, []byte("dummy content"), os.ModePerm); err != nil {
+	if err := os.WriteFile(file1, []byte("dummy content"), 0o744); err != nil {
 		tb.Fatal(err)
 	}
 	if err := os.Symlink(file1, symfile1); err != nil {
@@ -87,7 +91,7 @@ func TestPrintMode_format(t *testing.T) {
 			name: "mode=ModeAll/file1",
 			mode: ModeAll,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "f 775 sym=0 13b        crc=0451ac5e A/file1",
+			wantFormat: "f 744 sym=0 13b        crc=0451ac5e A/file1",
 		},
 		{
 			name: "mode=ModeStd+ModeSymlink/dirA",
