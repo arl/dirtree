@@ -14,6 +14,7 @@ func TestPrint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// Platform dependent test case.
 	oswant := map[string][]string{
 		"linux": {
@@ -23,7 +24,6 @@ func TestPrint(t *testing.T) {
 			"? 777 sym=1            crc=n/a      A/B/symdirA",
 			"f 744 sym=0 13b        crc=0451ac5e A/file1",
 			"? 777 sym=1            crc=n/a      A/symfile1",
-			"",
 		},
 		"darwin": {
 			"d 744 sym=0            crc=n/a      .",
@@ -40,8 +40,8 @@ func TestPrint(t *testing.T) {
 		t.Skipf("Case not tested yet on GOOS=%v, please add format an open a pull-request!", runtime.GOOS)
 	}
 
-	want := strings.Join(lines, "\n")
-	if got != want {
+	got = strings.TrimSpace(got)
+	if want := strings.Join(lines, "\n"); got != want {
 		t.Errorf("got:\n%v\nwant:\n%s", got, want)
 	}
 }
