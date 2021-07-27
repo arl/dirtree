@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func WriteDirTree(w io.Writer, root string, mode PrintMode) error {
+func Write(w io.Writer, root string, mode PrintMode) error {
 	bufw := bufio.NewWriter(w)
 
 	filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
@@ -31,9 +31,9 @@ func WriteDirTree(w io.Writer, root string, mode PrintMode) error {
 	return nil
 }
 
-func PrintDirTree(root string, mode PrintMode) (string, error) {
+func Print(root string, mode PrintMode) (string, error) {
 	var sb strings.Builder
-	if err := WriteDirTree(&sb, root, mode); err != nil {
+	if err := Write(&sb, root, mode); err != nil {
 		return "", err
 	}
 	return sb.String(), nil
