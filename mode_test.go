@@ -1,7 +1,6 @@
 package dirtree
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -25,35 +24,37 @@ func (d *dentry) IsDir() bool                { return d.info.IsDir() }
 func (d *dentry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *dentry) Info() (fs.FileInfo, error) { return d.info, nil }
 
-func TestPrintMode_format(t *testing.T) {
-	root := t.TempDir()
+// Create the following directory structure rooted at 'root':
+//	.
+//	└── A
+//		├── B
+//		│   └── symdirA -> symlink to A
+//		├── file1
+//		└── symfile1 -> symlink to A/file1
+func createDirStructure(tb testing.TB, root string) (dirA, file1, symfile1, symdirA string) {
+	dirA = filepath.Join(root, "A")
+	file1 = filepath.Join(root, "A", "file1")
+	symfile1 = filepath.Join(root, "A", "symfile1")
+	symdirA = filepath.Join(root, "A", "B", "symdirA")
 
-	// Create the following directory structure rooted at 'root':
-	//	.
-	//	└── A
-	//		├── B
-	//		│   └── symdirA -> symlink to A
-	//		├── file1
-	//		└── symfile1 -> symlink to A/file1
-
-	var (
-		dirA     = filepath.Join(root, "A")
-		file1    = filepath.Join(root, "A", "file1")
-		symfile1 = filepath.Join(root, "A", "symfile1")
-		symdirA  = filepath.Join(root, "A", "B", "symdirA")
-	)
 	if err := os.MkdirAll(filepath.Join(dirA, "B"), os.ModePerm); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	if err := os.WriteFile(file1, []byte("dummy content"), os.ModePerm); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	if err := os.Symlink(file1, symfile1); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	if err := os.Symlink(dirA, symdirA); err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
+	return
+}
+
+func TestPrintMode_format(t *testing.T) {
+	root := t.TempDir()
+	dirA, file1, symfile1, symdirA := createDirStructure(t, root)
 
 	tests := []struct {
 		name       string
@@ -142,7 +143,6 @@ func TestPrintMode_format(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.mode.format(tt.root, tt.fullpath, tt.dirent)
-			fmt.Println(err)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PrintMode.format() error = %v, wantErr %v", err, tt.wantErr)
 				return
