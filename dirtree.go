@@ -12,7 +12,7 @@ import (
 func Write(w io.Writer, root string, mode PrintMode) error {
 	bufw := bufio.NewWriter(w)
 
-	filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
+	return filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -28,7 +28,6 @@ func Write(w io.Writer, root string, mode PrintMode) error {
 		}
 		return nil
 	})
-	return nil
 }
 
 func Print(root string, mode PrintMode) (string, error) {
