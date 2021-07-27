@@ -38,11 +38,10 @@ const (
 	// ModePerm shows the Unix permission bits, in octal. Example "644".
 	ModePerm
 
-	// ModeStd is a mask showing kind and size all standard information aout a
-	// file. Should be enough in most cases.
+	// ModeStd is a mask showing file type and size.
 	ModeStd PrintMode = ModeType | ModeSize
 
-	// ModeAll is a mask showing all information aout a file.
+	// ModeAll is a mask showing all information about a file.
 	ModeAll PrintMode = ModeType | ModeSize | ModeSymlink | ModePerm | ModeCRC32
 )
 
@@ -119,7 +118,7 @@ func checksumNA() string {
 	return fmt.Sprintf("%-*s", crcChars, na)
 }
 
-// format prints the name
+// format returns the file at fullpath, roots it at root, following the current print mode.
 func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format string, err error) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -130,14 +129,15 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 	sb := strings.Builder{}
 	ft := ftype(dirent)
 
+	// Separate successive mode expressions
 	sep := func() {
-		// Add separator between mode expressions if necessary
 		if sb.Len() != 0 {
 			sb.WriteByte(' ')
 		}
 	}
 
-	var fi fs.FileInfo // lazily created
+	var fi fs.FileInfo
+	// stat creates fi lazily
 	stat := func() fs.FileInfo {
 		if fi != nil {
 			return fi
