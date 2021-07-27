@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -53,6 +54,7 @@ func createDirStructure(tb testing.TB, root string) (dirA, file1, symfile1, symd
 	if err := os.Symlink(dirA, symdirA); err != nil {
 		tb.Fatal(err)
 	}
+
 	return
 }
 
@@ -66,74 +68,77 @@ func TestPrintMode_format(t *testing.T) {
 		root       string
 		fullpath   string
 		dirent     fs.DirEntry
-		wantFormat string
+		wantFormat map[string]string
 		wantErr    bool
 	}{
 		{
 			name: "mode=ModeType/file1",
 			mode: ModeType,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "f A/file1",
+			wantFormat: map[string]string{"all": "f A/file1"},
 		},
 		{
 			name: "mode=ModeSize/file1",
 			mode: ModeSize,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "13b        A/file1",
+			wantFormat: map[string]string{"all": "13b        A/file1"},
 		},
 		{
 			name: "mode=ModeStd/file1",
 			mode: ModeStd,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "f 13b        A/file1",
+			wantFormat: map[string]string{"all": "f 13b        A/file1"},
 		},
 		{
 			name: "mode=ModeAll/file1",
 			mode: ModeAll,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "f 744 sym=0 13b        crc=0451ac5e A/file1",
+			wantFormat: map[string]string{"all": "f 744 sym=0 13b        crc=0451ac5e A/file1"},
 		},
 		{
 			name: "mode=ModeStd+ModeSymlink/dirA",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: dirA, dirent: newDentry(dirA),
-			wantFormat: "d sym=0            A",
+			wantFormat: map[string]string{"all": "d sym=0            A"},
 		},
 		{
 			name: "mode=ModeType+ModeSymlink/symfile1",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
-			wantFormat: "? sym=1            A/symfile1",
+			wantFormat: map[string]string{"all": "? sym=1            A/symfile1"},
 		},
 		{
 			name: "mode=ModeType+ModeSymlink/symdirA",
 			mode: ModeStd | ModeSymlink,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			wantFormat: "? sym=1            A/B/symdirA",
+			wantFormat: map[string]string{"all": "? sym=1            A/B/symdirA"},
 		},
 		{
 			name: "mode=ModeCRC32/file1",
 			mode: ModeCRC32,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			wantFormat: "crc=0451ac5e A/file1",
+			wantFormat: map[string]string{"all": "crc=0451ac5e A/file1"},
 		},
 		{
 			name: "mode=ModeCRC32/dirA",
 			mode: ModeCRC32,
 			root: root, fullpath: dirA, dirent: newDentry(dirA),
-			wantFormat: "crc=n/a      A",
+			wantFormat: map[string]string{"all": "crc=n/a      A"},
 		},
 		{
 			name: "mode=ModeCRC32/symfile1",
 			mode: ModeCRC32,
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
-			wantFormat: "crc=n/a      A/symfile1",
+			wantFormat: map[string]string{"all": "crc=n/a      A/symfile1"},
 		},
 		{
 			name: "mode=ModePerm/symdirA",
 			mode: ModePerm,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			wantFormat: "777 A/B/symdirA",
+			wantFormat: map[string]string{
+				"linux":  "777 A/B/symdirA",
+				"darwin": "755 A/B/symdirA",
+			},
 		},
 
 		// Error cases
@@ -151,8 +156,16 @@ func TestPrintMode_format(t *testing.T) {
 				t.Errorf("PrintMode.format() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.wantFormat {
-				t.Errorf("format error\ngot :%q\nwant:%q", got, tt.wantFormat)
+			want, ok := tt.wantFormat["all"]
+			if !ok {
+				// Platform dependent test case.
+				want, ok = tt.wantFormat[runtime.GOOS]
+				if !ok {
+					t.Skipf("Case not tested yet on GOOS=%v, please add format an open a pull-request!", runtime.GOOS)
+				}
+			}
+			if got != want {
+				t.Errorf("format error\ngot :%q\nwant:%q", got, want)
 			}
 		})
 	}
