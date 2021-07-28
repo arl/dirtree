@@ -62,6 +62,33 @@ func TestSprint(t *testing.T) {
 				"?            crc=n/a      A/symfile1",
 			},
 		},
+		{
+			name: `Ignore`,
+			opts: []Option{Ignore("*/file1")},
+			want: []string{
+				"d            crc=n/a      .",
+				"d            crc=n/a      A",
+				"d            crc=n/a      A/B",
+				"?            crc=n/a      A/B/symdirA",
+				"?            crc=n/a      A/symfile1",
+			},
+		},
+		{
+			name: `multiple Ignore`,
+			opts: []Option{Ignore("*/file1"), Ignore("A")},
+			want: []string{
+				"d            crc=n/a      .",
+				"d            crc=n/a      A/B",
+				"?            crc=n/a      A/B/symdirA",
+				"?            crc=n/a      A/symfile1",
+			},
+		},
+		// Error cases
+		{
+			name:    "invalid ignore pattern",
+			opts:    []Option{Ignore("a/b[")},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -74,7 +101,7 @@ func TestSprint(t *testing.T) {
 
 			got = strings.TrimSpace(got)
 			if want := strings.Join(tt.want, "\n"); got != want {
-				t.Errorf("got:\n%v\nwant:\n%s", got, want)
+				t.Errorf("invalid output:\ngot:\n%v\n\nwant:\n%s", got, want)
 			}
 		})
 	}

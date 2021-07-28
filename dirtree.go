@@ -13,11 +13,13 @@ import (
 type config struct {
 	mode     PrintMode
 	showRoot bool
+	ignore   []string
 }
 
 var defaultCfg = config{
 	mode:     ModeAll,
 	showRoot: true,
+	ignore:   nil,
 }
 
 type Option interface {
@@ -36,7 +38,22 @@ func (in IncludeRoot) apply(cfg *config) error {
 	return nil
 }
 
+// The Ignore option defines a pattern allowing to ignore certain files to be
+// printed, depending on their relative path, with respect to the chosen root.
+// Ignore follows the syntax used and described with the filepath.Match
+// function. Before checking if it matches a pattern, a path is first converted
+// to its slash ('/') based version, to ensure cross-platform consistency of the
+// dirtree package.
+// Ignore can be provided multiple times to ignore multiple patterns.
+type Ignore string
 
+func (i Ignore) apply(cfg *config) error {
+	if _, err := filepath.Match(string(i), "/"); err != nil {
+		return fmt.Errorf("invalid ignore pattern %v: %v", i, err)
+	}
+	cfg.ignore = append(cfg.ignore, string(i))
+	return nil
+}
 
 func Write(w io.Writer, root string, opts ...Option) error {
 	cfg := defaultCfg
@@ -62,17 +79,40 @@ func Write(w io.Writer, root string, opts ...Option) error {
 			}
 		}
 
+		// Path conversion: relative to root and slash based
+		rel, err := filepath.Rel(root, fullpath)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+
+		// Ignore patterns
+		if cfg.ignore != nil {
+			for _, pattern := range cfg.ignore {
+				if m, _ := filepath.Match(pattern, rel); m {
+					return nil
+				}
+			}
+		}
+
 		line, err := cfg.mode.format(root, fullpath, dirent)
 		if err != nil {
 			return fmt.Errorf("can't format %s: %s", fullpath, err)
 		}
-		bufw.WriteString(line)
-		bufw.WriteByte('\n')
-		return nil
+		if _, err = bufw.WriteString(line); err != nil {
+			return err
+		}
+
+		// Write path
+		if _, err = bufw.WriteString(rel); err != nil {
+			return err
+		}
+		return bufw.WriteByte('\n')
 	})
 	if err != nil {
 		return fmt.Errorf("dirtree: error walking directory: %v", err)
 	}
+
 	if err := bufw.Flush(); err != nil {
 		return fmt.Errorf("dirtree: can't write output: %s", err)
 	}

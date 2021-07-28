@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -157,14 +156,7 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 		sb.WriteString(checksum(ft, fullpath))
 	}
 
-	// Write file name
+	// Add a separator (if necessary)
 	sep()
-	rel, err := filepath.Rel(root, fullpath)
-	if err != nil {
-		return "", fmt.Errorf("can't find relative path: %s", err)
-	}
-
-	// Convert to slash-based path.
-	sb.WriteString(filepath.ToSlash(rel))
-	return sb.String(), err
+	return sb.String(), nil
 }
