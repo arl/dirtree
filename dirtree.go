@@ -5,21 +5,38 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 )
+
+type config struct {
+	mode     PrintMode
+	showRoot bool
+}
+
+var defaultCfg = config{
+	mode:     ModeAll,
+	showRoot: true,
+}
 
 type Option interface {
 	apply(*config) error
 }
 
-type config struct {
-	mode PrintMode
+// The ExcludeRoot option hides the root directory from the list.
+var ExcludeRoot Option = IncludeRoot(false)
+
+// ExcludeRoot is the option controlling whether the root directory should be
+// printed when listing its content.
+type IncludeRoot bool
+
+func (in IncludeRoot) apply(cfg *config) error {
+	cfg.showRoot = bool(in)
+	return nil
 }
 
-var defaultCfg = config{
-	mode: ModeAll,
-}
+
 
 func Write(w io.Writer, root string, opts ...Option) error {
 	cfg := defaultCfg
@@ -29,10 +46,20 @@ func Write(w io.Writer, root string, opts ...Option) error {
 		}
 	}
 
+	seenRoot := false
+
 	bufw := bufio.NewWriter(w)
 	err := filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+
+		// Exclude root
+		if !seenRoot {
+			seenRoot = true
+			if !cfg.showRoot {
+				return nil
+			}
 		}
 
 		line, err := cfg.mode.format(root, fullpath, dirent)
@@ -52,10 +79,16 @@ func Write(w io.Writer, root string, opts ...Option) error {
 	return nil
 }
 
-func Print(root string, opts ...Option) (string, error) {
+// Sprint calls Write and returns the list of files as a string.
+func Sprint(root string, opts ...Option) (string, error) {
 	var sb strings.Builder
 	if err := Write(&sb, root, opts...); err != nil {
 		return "", err
 	}
 	return sb.String(), nil
+}
+
+// Print is a wrapper around Write(os.Stdout, ...).
+func Print(root string, opts ...Option) error {
+	return Write(os.Stdout, root, opts...)
 }
