@@ -93,25 +93,25 @@ func TestPrintMode_format(t *testing.T) {
 			name: "mode=ModeAll/file1",
 			mode: ModeAll,
 			root: root, fullpath: file1, dirent: newDentry(file1),
-			want: map[string]string{"all": "f 744 sym=0 13b        crc=0451ac5e A/file1"},
+			want: map[string]string{"all": "f 13b        crc=0451ac5e A/file1"},
 		},
 		{
-			name: "mode=ModeStd+ModeSymlink/dirA",
-			mode: ModeStd | ModeSymlink,
+			name: "mode=ModeStd/dirA",
+			mode: ModeStd,
 			root: root, fullpath: dirA, dirent: newDentry(dirA),
-			want: map[string]string{"all": "d sym=0            A"},
+			want: map[string]string{"all": "d            A"},
 		},
 		{
-			name: "mode=ModeType+ModeSymlink/symfile1",
-			mode: ModeStd | ModeSymlink,
+			name: "mode=ModeType/symfile1",
+			mode: ModeStd,
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
-			want: map[string]string{"all": "? sym=1            A/symfile1"},
+			want: map[string]string{"all": "?            A/symfile1"},
 		},
 		{
-			name: "mode=ModeType+ModeSymlink/symdirA",
-			mode: ModeStd | ModeSymlink,
+			name: "mode=ModeType/symdirA",
+			mode: ModeStd,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			want: map[string]string{"all": "? sym=1            A/B/symdirA"},
+			want: map[string]string{"all": "?            A/B/symdirA"},
 		},
 		{
 			name: "mode=ModeCRC32/file1",
@@ -131,20 +131,11 @@ func TestPrintMode_format(t *testing.T) {
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
 			want: map[string]string{"all": "crc=n/a      A/symfile1"},
 		},
-		{
-			name: "mode=ModePerm/symdirA",
-			mode: ModePerm,
-			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
-			want: map[string]string{
-				"linux":  "777 A/B/symdirA",
-				"darwin": "755 A/B/symdirA",
-			},
-		},
 
 		// Error cases
 		{
-			name: "mode=ModePerm/do-not-exist",
-			mode: ModePerm,
+			name: "mode=ModeAll/do-not-exist",
+			mode: ModeAll,
 			root: root, fullpath: "do-not-exist", dirent: newDentry(symdirA),
 			wantErr: true,
 		},

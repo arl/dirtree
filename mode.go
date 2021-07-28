@@ -26,23 +26,16 @@ const (
 	// would be OS-dependent).
 	ModeSize
 
-	// ModeSymlink indicates if a file is a symlink.
-	// It prints "sym=1" or "sym=0".
-	ModeSymlink
-
 	// ModeCRC32 computes and reports the CRC-32 checksum for regular files. For
 	// other file types, or for files which permissions prevent reading, it
 	// shows n/a (i.e. not applicable). Example "crc=294a245b" or "crc=n/a"
 	ModeCRC32
 
-	// ModePerm shows the Unix permission bits, in octal. Example "644".
-	ModePerm
-
 	// ModeStd is a mask showing file type and size.
 	ModeStd PrintMode = ModeType | ModeSize
 
 	// ModeAll is a mask showing all information about a file.
-	ModeAll PrintMode = ModeType | ModeSize | ModeSymlink | ModePerm | ModeCRC32
+	ModeAll PrintMode = ModeType | ModeSize | ModeCRC32
 )
 
 type filetype byte
@@ -136,43 +129,20 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 		}
 	}
 
-	var fi fs.FileInfo
-	// stat creates fi lazily
-	stat := func() fs.FileInfo {
-		if fi != nil {
-			return fi
-		}
-		fi, err = os.Lstat(fullpath)
-		if err != nil {
-			panic(fmt.Errorf("lstat failed: %v", err))
-		}
-		return fi
-	}
-
 	if mode&ModeType != 0 {
 		sep()
 		sb.WriteByte(byte(ft))
 	}
 
-	if mode&ModePerm != 0 {
-		sep()
-		perm := stat().Mode() & fs.ModePerm
-		sb.WriteString(strconv.FormatUint(uint64(perm), 8))
-	}
-
-	if mode&ModeSymlink != 0 {
-		sep()
-		issym := byte('0')
-		if (stat().Mode() & fs.ModeSymlink) != 0 {
-			issym = '1'
-		}
-		sb.WriteString("sym=")
-		sb.WriteByte(issym)
-	}
-
 	if mode&ModeSize != 0 {
 		sep()
-		sb.WriteString(formatSize(ft, stat().Size()))
+
+		fi, err := os.Lstat(fullpath)
+		if err != nil {
+			return "", fmt.Errorf("failed to get size of %v: %v", fullpath, err)
+		}
+
+		sb.WriteString(formatSize(ft, fi.Size()))
 	}
 
 	if mode&ModeCRC32 != 0 {
@@ -187,7 +157,8 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 	if err != nil {
 		return "", fmt.Errorf("can't find relative path: %s", err)
 	}
-	sb.WriteString(rel)
 
+	// Convert to slash-based path.
+	sb.WriteString(filepath.ToSlash(rel))
 	return sb.String(), err
 }

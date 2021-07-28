@@ -18,20 +18,20 @@ func TestPrint(t *testing.T) {
 	// Platform dependent test case.
 	oswant := map[string][]string{
 		"linux": {
-			"d 744 sym=0            crc=n/a      .",
-			"d 744 sym=0            crc=n/a      A",
-			"d 744 sym=0            crc=n/a      A/B",
-			"? 777 sym=1            crc=n/a      A/B/symdirA",
-			"f 744 sym=0 13b        crc=0451ac5e A/file1",
-			"? 777 sym=1            crc=n/a      A/symfile1",
+			"d            crc=n/a      .",
+			"d            crc=n/a      A",
+			"d            crc=n/a      A/B",
+			"?            crc=n/a      A/B/symdirA",
+			"f 13b        crc=0451ac5e A/file1",
+			"?            crc=n/a      A/symfile1",
 		},
 		"darwin": {
-			"d 744 sym=0            crc=n/a      .",
-			"d 744 sym=0            crc=n/a      A",
-			"d 744 sym=0            crc=n/a      A/B",
-			"? 755 sym=1            crc=n/a      A/B/symdirA",
-			"f 744 sym=0 13b        crc=0451ac5e A/file1",
-			"? 755 sym=1            crc=n/a      A/symfile1",
+			"d            crc=n/a      .",
+			"d            crc=n/a      A",
+			"d            crc=n/a      A/B",
+			"?            crc=n/a      A/B/symdirA",
+			"f 13b        crc=0451ac5e A/file1",
+			"?            crc=n/a      A/symfile1",
 		},
 	}
 
