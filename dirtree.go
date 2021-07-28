@@ -9,30 +9,52 @@ import (
 	"strings"
 )
 
-func Write(w io.Writer, root string, mode PrintMode) error {
-	bufw := bufio.NewWriter(w)
+type Option interface {
+	apply(*config) error
+}
 
-	return filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
+type config struct {
+	mode PrintMode
+}
+
+var defaultCfg = config{
+	mode: ModeAll,
+}
+
+func Write(w io.Writer, root string, opts ...Option) error {
+	cfg := defaultCfg
+	for _, o := range opts {
+		if err := o.apply(&cfg); err != nil {
+			return fmt.Errorf("dirtree: configuration error: %v", err)
+		}
+	}
+
+	bufw := bufio.NewWriter(w)
+	err := filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		line, err := mode.format(root, fullpath, dirent)
+		line, err := cfg.mode.format(root, fullpath, dirent)
 		if err != nil {
-			return fmt.Errorf("WriteDirTree: can't format %s: %s", fullpath, err)
+			return fmt.Errorf("can't format %s: %s", fullpath, err)
 		}
 		bufw.WriteString(line)
 		bufw.WriteByte('\n')
-		if err := bufw.Flush(); err != nil {
-			return fmt.Errorf("WriteDirTree: can't write: %s", err)
-		}
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("dirtree: error walking directory: %v", err)
+	}
+	if err := bufw.Flush(); err != nil {
+		return fmt.Errorf("dirtree: can't write output: %s", err)
+	}
+	return nil
 }
 
-func Print(root string, mode PrintMode) (string, error) {
+func Print(root string, opts ...Option) (string, error) {
 	var sb strings.Builder
-	if err := Write(&sb, root, mode); err != nil {
+	if err := Write(&sb, root, opts...); err != nil {
 		return "", err
 	}
 	return sb.String(), nil
