@@ -7,10 +7,9 @@
 Dirtree
 ========
 
-Dirtree recursively walks a directory structure and prints one line per file,
-plus additional information such as directory, file size and a CRC-32 hash of
-its content for quick comparison. This is mostly useful for quickly checking the
-differences between 2 directory structures, in tests for example.  
+Dirtree recursively walks a directory structure and prints one line per file.
+Its output is mostly useful for quickly checking the differences between 2
+directory structures, in tests for example.  
 
 ```go
 ls, err := dirtree.Print(root, dirtree.ModeAll)
