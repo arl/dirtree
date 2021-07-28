@@ -8,13 +8,9 @@ Dirtree
 ========
 
 Dirtree recursively walks a directory structure and prints one line per file,
-plus additional information such as file size, permissions, a hash of file 
-content, etc. which is very useful to see at a glance the differences between
-2 directories.  
-The main use case is using Dirtree output as golden file when testing functions
-which outcome is to create files and/or directory structures.
-
-
+plus additional information such as directory, file size and a CRC-32 hash of
+its content for quick comparison. This is mostly useful for quickly checking the
+differences between 2 directory structures, in tests for example.  
 
 ```go
 ls, err := dirtree.Print(root, dirtree.ModeAll)
@@ -22,12 +18,12 @@ if err != nil {
     log.Fatalf("dirtree error: %v", err)
 }
 // output: 
-// d 775 sym=0            crc=n/a      .
-// d 775 sym=0            crc=n/a      A
-// d 775 sym=0            crc=n/a      A/B
-// ? 777 sym=1            crc=n/a      A/B/symdirA
-// f 775 sym=0 13b        crc=0451ac5e A/file1
-// ? 777 sym=1            crc=n/a      A/symfile1
+// d            crc=n/a      .
+// d            crc=n/a      A
+// d            crc=n/a      A/B
+// ?            crc=n/a      A/B/symdirA
+// f 13b        crc=0451ac5e A/file1
+// ?            crc=n/a      A/symfile1
 ```
 
 
