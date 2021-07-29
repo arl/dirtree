@@ -28,7 +28,7 @@ func TestSprint(t *testing.T) {
 			},
 		},
 		{
-			name: "ModeAll",
+			name: "all details",
 			opts: []Option{ModeAll},
 			want: []string{
 				"d            crc=n/a      .",
@@ -40,7 +40,7 @@ func TestSprint(t *testing.T) {
 			},
 		},
 		{
-			name: "ExcludeRoot",
+			name: "exclude root",
 			opts: []Option{ExcludeRoot},
 			want: []string{
 				"d            crc=n/a      A",
@@ -51,7 +51,7 @@ func TestSprint(t *testing.T) {
 			},
 		},
 		{
-			name: "IncludeRoot(true)",
+			name: "include root",
 			opts: []Option{IncludeRoot(true)},
 			want: []string{
 				"d            crc=n/a      .",
@@ -63,7 +63,7 @@ func TestSprint(t *testing.T) {
 			},
 		},
 		{
-			name: `Ignore`,
+			name: `ignore single`,
 			opts: []Option{Ignore("*/file1")},
 			want: []string{
 				"d            crc=n/a      .",
@@ -74,7 +74,7 @@ func TestSprint(t *testing.T) {
 			},
 		},
 		{
-			name: `multiple Ignore`,
+			name: `ignore multiple`,
 			opts: []Option{Ignore("*/file1"), Ignore("A")},
 			want: []string{
 				"d            crc=n/a      .",
@@ -83,10 +83,33 @@ func TestSprint(t *testing.T) {
 				"?            crc=n/a      A/symfile1",
 			},
 		},
+		{
+			name: `depth 1`,
+			opts: []Option{ModeType, Depth(1)},
+			want: []string{
+				"d .",
+				"d A",
+			},
+		},
+		{
+			name: `depth 2 and no root`,
+			opts: []Option{ModeType, Depth(2), ExcludeRoot},
+			want: []string{
+				"d A",
+				"d A/B",
+				"f A/file1",
+				"? A/symfile1",
+			},
+		},
 		// Error cases
 		{
 			name:    "invalid ignore pattern",
 			opts:    []Option{Ignore("a/b[")},
+			wantErr: true,
+		},
+		{
+			name:    "negative depth",
+			opts:    []Option{Depth(-1)},
 			wantErr: true,
 		},
 	}

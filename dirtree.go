@@ -14,12 +14,14 @@ type config struct {
 	mode     PrintMode
 	showRoot bool
 	ignore   []string
+	depth    int
 }
 
 var defaultCfg = config{
 	mode:     ModeAll,
 	showRoot: true,
 	ignore:   nil,
+	depth:    int(infiniteDepth),
 }
 
 type Option interface {
@@ -55,6 +57,19 @@ func (i Ignore) apply(cfg *config) error {
 	return nil
 }
 
+type Depth int
+
+func (d Depth) apply(cfg *config) error {
+	if d < 0 {
+		return fmt.Errorf("negative Depth is invalid")
+	}
+	cfg.depth = int(d)
+	return nil
+}
+
+const infiniteDepth Depth = 0
+
+// Write prints the directory tree rooted at root in w.
 func Write(w io.Writer, root string, opts ...Option) error {
 	cfg := defaultCfg
 	for _, o := range opts {
@@ -84,6 +99,17 @@ func Write(w io.Writer, root string, opts ...Option) error {
 		if err != nil {
 			return err
 		}
+
+		// Depth check
+		if cfg.depth != 0 {
+			if len(strings.Split(rel, string(os.PathSeparator))) > cfg.depth {
+				if dirent.IsDir() {
+					err = fs.SkipDir
+				}
+				return err
+			}
+		}
+
 		rel = filepath.ToSlash(rel)
 
 		// Ignore patterns
