@@ -1,6 +1,7 @@
 package dirtree
 
 import (
+	"io"
 	"strings"
 	"testing"
 )
@@ -127,5 +128,27 @@ func TestSprint(t *testing.T) {
 				t.Errorf("invalid output:\ngot:\n%v\n\nwant:\n%s", got, want)
 			}
 		})
+	}
+}
+
+func BenchmarkWrite(b *testing.B) {
+	/*
+		This benchmarks runs on a directory structure of 11110 directories and
+		11110 files, filled with 1024byte of random data, created with:
+
+		ulimit -S -n 20000
+		cd $(mktemp -d)
+		mkdir -p A{0,1,2,3,4,5,6,7,8,9}/B{0,1,2,3,4,5,6,7,8,9}/C{0,1,2,3,4,5,6,7,8,9}/D{0,1,2,3,4,5,6,7,8,9}
+		head -c 1024 /dev/urandom | tee A{0,1,2,3,4,5,6,7,8,9}/B{0,1,2,3,4,5,6,7,8,9}/C{0,1,2,3,4,5,6,7,8,9}/D{0,1,2,3,4,5,6,7,8,9}/file > /dev/null
+		head -c 1024 /dev/urandom | tee A{0,1,2,3,4,5,6,7,8,9}/B{0,1,2,3,4,5,6,7,8,9}/C{0,1,2,3,4,5,6,7,8,9}/file > /dev/null
+		head -c 1024 /dev/urandom | tee A{0,1,2,3,4,5,6,7,8,9}/B{0,1,2,3,4,5,6,7,8,9}/file > /dev/null
+		head -c 1024 /dev/urandom | tee A{0,1,2,3,4,5,6,7,8,9}/file > /dev/null
+	*/
+
+	const dir = "/tmp/tmp.YGmxHbsmj1"
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		Write(io.Discard, dir, Depth(2))
 	}
 }

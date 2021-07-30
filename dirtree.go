@@ -79,7 +79,6 @@ func Write(w io.Writer, root string, opts ...Option) error {
 	}
 
 	seenRoot := false
-
 	bufw := bufio.NewWriter(w)
 	err := filepath.WalkDir(root, func(fullpath string, dirent fs.DirEntry, err error) error {
 		if err != nil {
