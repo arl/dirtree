@@ -88,7 +88,10 @@ func (w *writer) walk(fullpath string, dirent fs.DirEntry, err error) error {
 	return w.bufw.WriteByte('\n')
 }
 
-// Write prints the directory tree rooted at root in w.
+// Write walks the directory rooted at root and prints one file per line into w.
+//
+// A variable number of options can be provided to control the limit the files
+// printed and/or the amount of information printed for each of them.
 func Write(w io.Writer, root string, opts ...Option) error {
 	dtw, err := newWriter(w, root, opts...)
 	if err != nil {
@@ -105,7 +108,11 @@ func Write(w io.Writer, root string, opts ...Option) error {
 	return nil
 }
 
-// Sprint calls Write and returns the list of files as a string.
+// Sprint walks the directory rooted at root and returns a string containing one
+// file per line.
+//
+// A variable number of options can be provided to control the limit the files
+// printed and/or the amount of information printed for each of them.
 func Sprint(root string, opts ...Option) (string, error) {
 	var sb strings.Builder
 	if err := Write(&sb, root, opts...); err != nil {
@@ -114,7 +121,11 @@ func Sprint(root string, opts ...Option) (string, error) {
 	return sb.String(), nil
 }
 
-// Print is a wrapper around Write(os.Stdout, ...).
+// Print walks the directory rooted at root and prints one file per line on
+// standard output.
+//
+// A variable number of options can be provided to control the limit the files
+// printed and/or the amount of information printed for each of them.
 func Print(root string, opts ...Option) error {
 	return Write(os.Stdout, root, opts...)
 }
