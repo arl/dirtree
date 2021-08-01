@@ -2,13 +2,13 @@ package dirtree
 
 import (
 	"io"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestSprint(t *testing.T) {
-	root := t.TempDir()
-	createDirStructure(t, root)
+	root := filepath.Join("testdata", "dir")
 
 	tests := []struct {
 		name    string
@@ -102,6 +102,7 @@ func TestSprint(t *testing.T) {
 				"? A/symfile1",
 			},
 		},
+
 		// Error cases
 		{
 			name:    "invalid ignore pattern",

@@ -24,42 +24,12 @@ func (d *dentry) IsDir() bool                { return d.info.IsDir() }
 func (d *dentry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *dentry) Info() (fs.FileInfo, error) { return d.info, nil }
 
-// Create the following directory structure rooted at 'root':
-//	.
-//	└── A
-//		├── B
-//		│   └── symdirA -> symlink to A
-//		├── file1
-//		└── symfile1 -> symlink to A/file1
-func createDirStructure(tb testing.TB, root string) (dirA, file1, symfile1, symdirA string) {
-	if err := os.Chmod(root, 0o744); err != nil {
-		tb.Fatal(err)
-	}
-
-	dirA = filepath.Join(root, "A")
-	file1 = filepath.Join(root, "A", "file1")
-	symfile1 = filepath.Join(root, "A", "symfile1")
-	symdirA = filepath.Join(root, "A", "B", "symdirA")
-
-	if err := os.MkdirAll(filepath.Join(dirA, "B"), 0o744); err != nil {
-		tb.Fatal(err)
-	}
-	if err := os.WriteFile(file1, []byte("dummy content"), 0o744); err != nil {
-		tb.Fatal(err)
-	}
-	if err := os.Symlink(file1, symfile1); err != nil {
-		tb.Fatal(err)
-	}
-	if err := os.Symlink(dirA, symdirA); err != nil {
-		tb.Fatal(err)
-	}
-
-	return
-}
-
 func TestPrintMode_format(t *testing.T) {
-	root := t.TempDir()
-	dirA, file1, symfile1, symdirA := createDirStructure(t, root)
+	root := filepath.Join("testdata", "dir")
+	dirA := filepath.Join(root, "A")
+	file1 := filepath.Join(root, "A", "file1")
+	symfile1 := filepath.Join(root, "A", "symfile1")
+	symdirA := filepath.Join(root, "A", "B", "symdirA")
 
 	tests := []struct {
 		name     string
@@ -153,9 +123,10 @@ func TestPrintMode_format(t *testing.T) {
 	}
 }
 
-func Test_checksumENOENT(t *testing.T) {
-	notExist := filepath.Join(t.TempDir(), "do-not-exist")
-	got := checksum(typeFile, notExist)
+func Test_checksumNA(t *testing.T) {
+	// Verify that checksum does not fail on error and that instead, it returns
+	// the string returned by checksumNA. Errors are caught before.
+	got := checksum(typeFile, "do-not-exist")
 	if got != checksumNA() {
 		t.Errorf("checksum() = %v, want %v", got, checksumNA())
 	}
