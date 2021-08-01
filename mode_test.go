@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 )
 
 type dentry struct {
@@ -111,7 +112,7 @@ func TestPrintMode_format(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.mode.format(tt.root, tt.fullpath, tt.dirent)
+			got, err := tt.mode.format(nil, tt.fullpath, tt.dirent)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PrintMode.format() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -126,8 +127,14 @@ func TestPrintMode_format(t *testing.T) {
 func Test_checksumNA(t *testing.T) {
 	// Verify that checksum does not fail on error and that instead, it returns
 	// the string returned by checksumNA. Errors are caught before.
-	got := checksum(typeFile, "do-not-exist")
-	if got != checksumNA() {
-		t.Errorf("checksum() = %v, want %v", got, checksumNA())
-	}
+	t.Run("fsys=nil", func(t *testing.T) {
+		if got := checksum(nil, "do-not-exist"); got != checksumNA() {
+			t.Errorf("checksum() = %v, want %v", got, checksumNA())
+		}
+	})
+	t.Run("fsys=MapFS", func(t *testing.T) {
+		if got := checksum(fstest.MapFS{}, "do-not-exist"); got != checksumNA() {
+			t.Errorf("checksum() = %v, want %v", got, checksumNA())
+		}
+	})
 }

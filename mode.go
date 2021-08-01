@@ -46,20 +46,20 @@ const (
 type filetype byte
 
 const (
-	typeDir   filetype = 'd'
-	typeFile  filetype = 'f'
-	typeOther filetype = '?'
+	typeFile  filetype = 'f' // a regular file
+	typeDir   filetype = 'd' // a directory
+	typeOther filetype = '?' // anything else (symlink, whatever, ...)
 )
 
 func ftype(dirent fs.DirEntry) filetype {
-	switch {
-	case dirent.Type().IsDir():
-		return typeDir
-	case dirent.Type().IsRegular():
+	typ := dirent.Type()
+	if typ.IsRegular() {
 		return typeFile
-	default:
-		return typeOther
 	}
+	if typ.Type() == fs.ModeDir {
+		return typeDir
+	}
+	return typeOther
 }
 
 // we pad the size to sizeDigits, with spaces, so that for most filenames all
@@ -86,22 +86,26 @@ var iobuf [32 * 1024]byte
 // number of chars in hexadecimal representation of a CRC-32.
 const crcChars = crc32.Size * 2 // 2 since 2 chars per raw byte
 
-func checksum(ft filetype, path string) (chksum string) {
+func checksum(fsys fs.FS, path string) (chksum string) {
 	defer func() {
 		if e := recover(); e != nil || chksum == "" {
 			chksum = checksumNA()
 		}
 	}()
-
-	if ft != typeFile {
-		return
+	var (
+		f   fs.File
+		err error
+	)
+	if fsys != nil {
+		f, err = fsys.Open(path)
+	} else {
+		f, err = os.Open(path)
 	}
-
-	h := crc32.NewIEEE()
-	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
+
+	h := crc32.NewIEEE()
 	defer f.Close()
 	if _, err := io.CopyBuffer(h, f, iobuf[:]); err != nil {
 		panic(err)
@@ -116,8 +120,8 @@ func checksumNA() string {
 	return fmt.Sprintf("%-*s", crcChars, na)
 }
 
-// format returns the file at fullpath, roots it at root, following the current print mode.
-func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format string, err error) {
+// format returns the file at fullpath, following the current print mode.
+func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (format string, err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
@@ -142,7 +146,12 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 	if mode&ModeSize != 0 {
 		sep()
 
-		fi, err := os.Lstat(fullpath)
+		var fi fs.FileInfo
+		if fsys == nil {
+			fi, err = os.Stat(fullpath)
+		} else {
+			fi, err = fs.Stat(fsys, fullpath)
+		}
 		if err != nil {
 			return "", fmt.Errorf("failed to get size of %v: %v", fullpath, err)
 		}
@@ -153,7 +162,11 @@ func (mode PrintMode) format(root, fullpath string, dirent fs.DirEntry) (format 
 	if mode&ModeCRC32 != 0 {
 		sep()
 		sb.WriteString("crc=")
-		sb.WriteString(checksum(ft, fullpath))
+		if ft != typeFile {
+			sb.WriteString(checksumNA())
+		} else {
+			sb.WriteString(checksum(fsys, fullpath))
+		}
 	}
 
 	// Add a separator (if necessary)
