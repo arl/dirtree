@@ -7,17 +7,14 @@
 Dirtree
 ========
 
-Dirtree recursively walks a directory structure and prints one line per file.
+Dirtree lists the content of a directory so that 2 directories can be quickly compared (i.e diff'ed). This is useful for testing (golden files) for example.
 
-
-Its output is mostly useful for quickly checking the differences between 2
-directory structures, in tests for example.  
 
 
 Usage
 -----
 
-Let's say the directory `dir` contains the following:
+In the following examples the root directory has the following content:
 ```
 .
 ├── bar
@@ -25,7 +22,7 @@ Let's say the directory `dir` contains the following:
 │   │   └── passwords
 │   └── dir2
 ├── baz
-│   └── a
+│   └── a
 │       └── b
 │           └── c
 │               └── nested
@@ -37,7 +34,7 @@ Let's say the directory `dir` contains the following:
 └── symlink -> foo/dir2/secrets
 ```
 
-## Use with a `fs.FS` or the actual machine filesystem.
+## Works with the actual filesystem or [`fs.FS`](https://pkg.go.dev/io/fs#FS)
 
 `dirtree.Write` and `dirtree.Sprint` walks the actual filesystem, however you
 can walks a `fs.FS` with `dirtree.WriteFS` and `dirtree.SprintFS`.
@@ -167,7 +164,7 @@ f 39166b     other-stuff.mp3
 ?            symlink
 ```
 
-# Limit depth
+### Limit depth
 
 The `dirtree.Depth`option is an integer that controls the maximum depth to
 descend into, starting from the root directory. Everything below that depth
@@ -187,7 +184,7 @@ f 39166b     other-stuff.mp3
 ?            symlink
 ```
 
-# ExcludeRoot
+### ExcludeRoot
 
 `dirtree.ExcludeRoot` hides the root directory in the listing.
 ```go
