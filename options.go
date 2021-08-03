@@ -13,7 +13,7 @@ type config struct {
 }
 
 var defaultCfg = config{
-	mode:     ModeAll,
+	mode:     ModeDefault,
 	showRoot: true,
 	ignore:   nil,
 	depth:    int(infiniteDepth),

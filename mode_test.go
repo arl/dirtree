@@ -55,7 +55,7 @@ func TestPrintMode_format(t *testing.T) {
 		},
 		{
 			name: "mode=ModeStd/file1",
-			mode: ModeStd,
+			mode: ModeDefault,
 			root: root, fullpath: file1, dirent: newDentry(file1),
 			want: "f 13b        ",
 		},
@@ -67,19 +67,19 @@ func TestPrintMode_format(t *testing.T) {
 		},
 		{
 			name: "mode=ModeStd/dirA",
-			mode: ModeStd,
+			mode: ModeDefault,
 			root: root, fullpath: dirA, dirent: newDentry(dirA),
 			want: "d            ",
 		},
 		{
 			name: "mode=ModeType/symfile1",
-			mode: ModeStd,
+			mode: ModeDefault,
 			root: root, fullpath: symfile1, dirent: newDentry(symfile1),
 			want: "?            ",
 		},
 		{
 			name: "mode=ModeType/symdirA",
-			mode: ModeStd,
+			mode: ModeDefault,
 			root: root, fullpath: symdirA, dirent: newDentry(symdirA),
 			want: "?            ",
 		},

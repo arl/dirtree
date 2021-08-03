@@ -36,8 +36,8 @@ const (
 	// shows n/a (i.e. not applicable). Example "crc=294a245b" or "crc=n/a"
 	ModeCRC32
 
-	// ModeStd is a mask showing file type and size.
-	ModeStd PrintMode = ModeType | ModeSize
+	// ModeDefault is a mask showing file type and size.
+	ModeDefault PrintMode = ModeType | ModeSize
 
 	// ModeAll is a mask showing all information about a file.
 	ModeAll PrintMode = ModeType | ModeSize | ModeCRC32
