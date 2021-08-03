@@ -52,6 +52,8 @@ func (i Ignore) apply(cfg *config) error {
 	return nil
 }
 
+// The Depth option indicates how many levels of directories below root should
+// we recurse into. 0, the default, means there's no limit.
 type Depth int
 
 func (d Depth) apply(cfg *config) error {
