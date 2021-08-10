@@ -10,17 +10,6 @@ import (
 	"strings"
 )
 
-// A PrintMode represents the amount of information to print about a file, next
-// to its filename. PrintMode is a bit set.
-// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
-type PrintMode uint32
-
-// implements the Option interface.
-func (m PrintMode) apply(cfg *config) error {
-	cfg.mode = m
-	return nil
-}
-
 const (
 	// ModeType indicates if file is a directory, a regular file or something
 	// else. It prints 'd', 'f' or '?' respectively.
@@ -46,10 +35,23 @@ const (
 type filetype byte
 
 const (
-	typeFile  filetype = 'f' // a regular file
-	typeDir   filetype = 'd' // a directory
-	typeOther filetype = '?' // anything else (symlink, whatever, ...)
+	typeFile  filetype = 1 << iota // a regular file
+	typeDir                        // a directory
+	typeOther                      // anything else (symlink, whatever, ...)
 )
+
+// byte returns the printable char corresponding to ft.
+func (ft filetype) char() byte {
+	switch ft {
+	case typeDir:
+		return 'd'
+	case typeFile:
+		return 'f'
+	case typeOther:
+		return '?'
+	}
+	panic(fmt.Sprintf("filetype.Char(): unexpected filetype value: %d", ft))
+}
 
 func ftype(dirent fs.DirEntry) filetype {
 	typ := dirent.Type()
@@ -121,7 +123,7 @@ func checksumNA() string {
 }
 
 // format returns the file at fullpath, following the current print mode.
-func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (format string, err error) {
+func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format string, err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
@@ -129,7 +131,6 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (f
 	}()
 
 	var sb strings.Builder
-	ft := ftype(dirent)
 
 	// Separate successive mode expressions
 	sep := func() {
@@ -140,7 +141,7 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (f
 
 	if mode&ModeType != 0 {
 		sep()
-		sb.WriteByte(byte(ft))
+		sb.WriteByte(ft.char())
 	}
 
 	if mode&ModeSize != 0 {

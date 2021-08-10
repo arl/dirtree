@@ -77,6 +77,35 @@ f 39166b     other-stuff.mp3
 ```
 
 
+### Type option
+
+The `dirtree.Type` option limits the files present in the listing based on their types.
+It's a string that may contain one or more characters:
+  - `f` for regular files
+  - `d` for directories
+  - `?` for anything else (symlink, etc.)
+
+For example, `dirtree.Type("f")` will only show regular files while
+`dirtree.Type("fd")` will both show regular files and directories.
+
+By default, `dirtree` shows all types if the `Type` option is not provided.
+
+```go
+dirtree.Write(os.Stdout, "dir", dirtree.Type("f?"))
+```
+
+displays:
+
+```
+f 0b         crc=00000000 bar/dir1/passwords
+f 1407216b   crc=733eee4d baz/a/b/c/nested
+f 7922820b   crc=fe02449a foo/dir2/secrets
+f 39166b     crc=d298754e other-stuff.mp3
+?            crc=n/a      symlink
+```
+
+
+
 ### PrintMode option
 
 The `dirtree.PrintMode` option is a bitset controlling the amount of information

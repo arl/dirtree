@@ -28,6 +28,24 @@ var tests = []struct {
 		},
 	},
 	{
+		name: "only files",
+		opts: []Option{Type("f")},
+		want: []string{
+			"f 13b        A/file1",
+		},
+	},
+	{
+		name: "all but files",
+		opts: []Option{Type("d?")},
+		want: []string{
+			"d            .",
+			"d            A",
+			"d            A/B",
+			"?            A/B/symdirA",
+			"?            A/symfile1",
+		},
+	},
+	{
 		name: "all details",
 		opts: []Option{ModeAll},
 		want: []string{
@@ -103,6 +121,16 @@ var tests = []struct {
 	},
 
 	// Error cases
+	{
+		name:    "empty type",
+		opts:    []Option{Type("")},
+		wantErr: true,
+	},
+	{
+		name:    "invalid type char",
+		opts:    []Option{Ignore("df?[")},
+		wantErr: true,
+	},
 	{
 		name:    "invalid ignore pattern",
 		opts:    []Option{Ignore("a/b[")},
