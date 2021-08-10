@@ -35,10 +35,23 @@ const (
 type filetype byte
 
 const (
-	typeFile  filetype = 'f' // a regular file
-	typeDir   filetype = 'd' // a directory
-	typeOther filetype = '?' // anything else (symlink, whatever, ...)
+	typeFile  filetype = 1 << iota // a regular file
+	typeDir                        // a directory
+	typeOther                      // anything else (symlink, whatever, ...)
 )
+
+// byte returns the printable char corresponding to ft.
+func (ft filetype) char() byte {
+	switch ft {
+	case typeDir:
+		return 'd'
+	case typeFile:
+		return 'f'
+	case typeOther:
+		return '?'
+	}
+	panic(fmt.Sprintf("filetype.Char(): unexpected filetype value: %d", ft))
+}
 
 func ftype(dirent fs.DirEntry) filetype {
 	typ := dirent.Type()
@@ -129,7 +142,7 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (f
 
 	if mode&ModeType != 0 {
 		sep()
-		sb.WriteByte(byte(ft))
+		sb.WriteByte(ft.char())
 	}
 
 	if mode&ModeSize != 0 {
