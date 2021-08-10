@@ -123,7 +123,7 @@ func checksumNA() string {
 }
 
 // format returns the file at fullpath, following the current print mode.
-func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (format string, err error) {
+func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format string, err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
@@ -131,7 +131,6 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, dirent fs.DirEntry) (f
 	}()
 
 	var sb strings.Builder
-	ft := ftype(dirent)
 
 	// Separate successive mode expressions
 	sep := func() {

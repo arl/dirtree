@@ -109,7 +109,8 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 			}
 		}
 
-		line, err := cfg.mode.format(fsys, fullpath, dirent)
+		ft := ftype(dirent)
+		line, err := cfg.mode.format(fsys, fullpath, ft)
 		if err != nil {
 			return fmt.Errorf("can't format %s: %s", fullpath, err)
 		}
