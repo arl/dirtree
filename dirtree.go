@@ -74,6 +74,12 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 			return err
 		}
 
+		// Skip based on type
+		ft := ftype(dirent)
+		if cfg.types&ft == 0 {
+			return nil
+		}
+
 		// Exclude root
 		if !seenRoot {
 			seenRoot = true
@@ -109,7 +115,6 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 			}
 		}
 
-		ft := ftype(dirent)
 		line, err := cfg.mode.format(fsys, fullpath, ft)
 		if err != nil {
 			return fmt.Errorf("can't format %s: %s", fullpath, err)
