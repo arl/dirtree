@@ -19,8 +19,21 @@ var defaultCfg = config{
 	depth:    int(infiniteDepth),
 }
 
+// Option is the interface implemented by dirtree types used to control what to
+// list and how to list it.
 type Option interface {
 	apply(*config) error
+}
+
+// A PrintMode represents the amount of information to print about a file, next
+// to its filename. PrintMode is a bit set.
+// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
+type PrintMode uint32
+
+// implements the Option interface.
+func (m PrintMode) apply(cfg *config) error {
+	cfg.mode = m
+	return nil
 }
 
 // The ExcludeRoot option hides the root directory from the list.
