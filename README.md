@@ -262,6 +262,13 @@ f 39166b     other-stuff.mp3
 ```
 
 
+## TODO
+
+ - API to retrieve the list of files and their dirtree attributes in a simple way
+ - streaming API (for large number of files)
+ - Match option: only prints files matching a pattern, repeatable (opposite of Ignore)
+
+
 License
 -------
 
