@@ -8,12 +8,34 @@
 Dirtree
 ========
 
-Dirtree lists the content of a directory so that 2 directories can be quickly compared (i.e diff'ed). This is useful for testing (golden files) for example.
+**Dirtree** lists the files in a directory or a fs.FS in a determinstic, configurable and cross-platform manner.
 
+Very useful for testing.
 
 
 Usage
 -----
+
+Add the `dirtree` module as dependency:
+
+    go get github.com/arl/dirtree@latest
+
+
+ - Basic usage
+
+To list the `./testdata` directory, recursively, to standard output:
+
+```go
+err := dirtree.Write(os.Stdout, "./testdata")
+if err != nil {
+	log.Fatal(err)
+}
+```
+
+You can pass mutiple options to control `dirtree`'s behavior and the information
+it prints for each file.
+
+## Documentation
 
 In the following examples the root directory has the following content:
 ```
@@ -35,10 +57,10 @@ In the following examples the root directory has the following content:
 └── symlink -> foo/dir2/secrets
 ```
 
-## Works with the actual filesystem or [`fs.FS`](https://pkg.go.dev/io/fs#FS)
+## Filesystem agnostic: use either the OS filesystem or an [`fs.FS`](https://pkg.go.dev/io/fs#FS)
 
-`dirtree.Write` and `dirtree.Sprint` walks the actual filesystem, however you
-can walks a `fs.FS` with `dirtree.WriteFS` and `dirtree.SprintFS`.
+`dirtree.Write` and `dirtree.Sprint` walks the filesystem of your operating
+system, however you can walks a `fs.FS` with `dirtree.WriteFS` and `dirtree.SprintFS`.
 
 
 ## Options
@@ -196,7 +218,7 @@ f 39166b     other-stuff.mp3
 
 ### Limit depth
 
-The `dirtree.Depth`option is an integer that controls the maximum depth to
+The `dirtree.Depth` option is an integer that controls the maximum depth to
 descend into, starting from the root directory. Everything below that depth
 won't be shown.
 
