@@ -107,14 +107,8 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		}
 
 		rel = filepath.ToSlash(rel)
-
-		// Ignore patterns
-		if cfg.ignore != nil {
-			for _, pattern := range cfg.ignore {
-				if m, _ := filepath.Match(pattern, rel); m {
-					return nil
-				}
-			}
+		if !shouldKeepPath(rel, cfg.globs) {
+			return nil
 		}
 
 		line, err := cfg.mode.format(fsys, fullpath, ft)
@@ -140,5 +134,4 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		return fmt.Errorf("dirtree: can't write output: %s", err)
 	}
 	return nil
-
 }

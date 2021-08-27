@@ -147,7 +147,6 @@ to show for each listed file.
 ```go
 dirtree.Write(os.Stdout, "dir", dirtree.ModeAll)
 ```
-
 displays:
 
 ```
@@ -171,10 +170,16 @@ f 39166b     crc=d298754e other-stuff.mp3
 
 ### Ignore files
 
-The `dirtree.Ignore` option allows to pass global patterns to ignore certain
-files/directories.  
-To ignore multiple patterns, simply pass the `Ignore` option multiple times,
-with different patterns. 
+The `dirtree.Ignore` option allows to ignore files matching a pattern. The path
+relative to the chosen root is matched against the pattern. Ignore follows the
+syntax used and described with the `filepath.Match` function. Before checking if
+it matches a pattern, a path is first converted to its slash ('/') based
+version, to ensure cross-platform consistency of the dirtree package.
+
+`dirtree.Ignore` can be provided multiple times to ignore multiple patterns. A
+file is ignored from the listing as long as at it matches at least one
+`dirtree.Ignore` pattern. Also, `dirtree.Ignore` has precedence over
+`dirtree.Match`.
 
 The pattern syntax is that of [filepath.Match](https://pkg.go.dev/path/filepath#Match):
 ```
@@ -196,7 +201,6 @@ character-range:
 
 ```go
 dirtree.Write(os.Stdout, dir, dirtree.Ignore("*/dir1"))
-
 ```
 prints:
 ```
@@ -216,6 +220,35 @@ f 39166b     other-stuff.mp3
 ?            symlink
 ```
 
+
+### Limit the listing for files matching a pattern
+
+The `dirtree.Match` option limits the listing to files that match a pattern. The
+path relative to the chosen root is matched against the pattern. `dirtree.Match`
+follows the syntax used and described with the `filepath.Match` function. Before
+checking if it matches a pattern, a path is first converted to its slash ('/')
+based version, to ensure cross-platform consistency of the dirtree package.
+
+`dirtree.Match` can be provided multiple times to match multiple patterns. A
+file is included in the listing as long as at it matches at least one
+`dirtree.Match` pattern, unless it matches an `dirtree.Ignore` pattern (since
+`dirtree.Ignore` has precedence over `dirtree.Match`).
+
+The pattern syntax is that of [filepath.Match](https://pkg.go.dev/path/filepath#Match).
+
+```go
+dirtree.Write(os.Stdout, dir, dirtree.Match("*/*[123]"), dirtree.Match("*[123]"))
+```
+prints:
+```
+d            bar/dir1
+d            bar/dir2
+d            foo/dir1
+d            foo/dir2
+f 39166b     other-stuff.mp3
+```
+
+
 ### Limit depth
 
 The `dirtree.Depth` option is an integer that controls the maximum depth to
@@ -226,7 +259,7 @@ won't be shown.
 ```go
 dirtree.Write(os.Stdout, dir, dirtree.Depth(1))
 ```
-only reports:
+reports:
 ```
 d            .
 d            bar
@@ -262,12 +295,12 @@ f 39166b     other-stuff.mp3
 ```
 
 
+
+
 ## TODO
 
  - API to retrieve the list of files and their dirtree attributes in a simple way
  - streaming API (for large number of files)
- - Match option: only prints files matching a pattern, repeatable (opposite of Ignore)
-
 
 License
 -------
