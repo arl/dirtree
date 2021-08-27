@@ -99,13 +99,15 @@ func shouldKeepPath(path string, ps []pattern) bool {
 	return true
 }
 
-// The Ignore option defines a pattern allowing to ignore certain files to be
-// printed, depending on their relative path, with respect to the chosen root.
-// Ignore follows the syntax used and described with the filepath.Match
-// function. Before checking if it matches a pattern, a path is first converted
-// to its slash ('/') based version, to ensure cross-platform consistency of the
-// dirtree package.
-// Ignore can be provided multiple times to ignore multiple patterns.
+// The Ignore option allows to ignore files matching a pattern. The path
+// relative to the chosen root is matched against the pattern. Ignore follows
+// the syntax used and described with the filepath.Match function. Before
+// checking if it matches a pattern, a path is first converted to its slash
+// ('/') based version, to ensure cross-platform consistency of the dirtree
+// package.
+//
+// Ignore can be provided multiple times to ignore multiple patterns. A file is
+// then ignored as soon as its path matches one pattern.
 type Ignore string
 
 func (i Ignore) apply(cfg *config) error {
