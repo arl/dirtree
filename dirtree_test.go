@@ -81,7 +81,7 @@ var tests = []struct {
 		},
 	},
 	{
-		name: `ignore single`,
+		name: `single ignore`,
 		opts: []Option{Ignore("*/file1")},
 		want: []string{
 			"d            .",
@@ -92,12 +92,46 @@ var tests = []struct {
 		},
 	},
 	{
-		name: `ignore multiple`,
+		name: `multiple ignore`,
 		opts: []Option{Ignore("*/file1"), Ignore("A")},
 		want: []string{
 			"d            .",
 			"d            A/B",
 			"?            A/B/symdirA",
+			"?            A/symfile1",
+		},
+	},
+	{
+		name: "single match",
+		opts: []Option{Match("*/*[1B]")},
+		want: []string{
+			"d            A/B",
+			"f 13b        A/file1",
+			"?            A/symfile1",
+		},
+	},
+	{
+		name: "multiple match",
+		opts: []Option{Match("*/*1"), Match("*/*B")},
+		want: []string{
+			"d            A/B",
+			"f 13b        A/file1",
+			"?            A/symfile1",
+		},
+	},
+	{
+		name: "ignore then match",
+		opts: []Option{Ignore("*/*B"), Match("*/*[1B]")},
+		want: []string{
+			"f 13b        A/file1",
+			"?            A/symfile1",
+		},
+	},
+	{
+		name: "match then ignore",
+		opts: []Option{Match("*/*[1B]"), Ignore("*/*B")},
+		want: []string{
+			"f 13b        A/file1",
 			"?            A/symfile1",
 		},
 	},
