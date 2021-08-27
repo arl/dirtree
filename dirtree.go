@@ -134,5 +134,4 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		return fmt.Errorf("dirtree: can't write output: %s", err)
 	}
 	return nil
-
 }
