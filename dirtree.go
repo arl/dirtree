@@ -1,3 +1,5 @@
+// Package dirtree implements utility routines to list files in a deterministic
+// and cross-patform manner.
 package dirtree
 
 import (
