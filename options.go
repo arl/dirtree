@@ -80,8 +80,8 @@ func (in IncludeRoot) apply(cfg *config) error {
 }
 
 type pattern struct {
-	pat     string // pattern matched against
-	discard bool   // indicates whether the file is discarded if it matches the pattern
+	pat string        // pattern matched against
+	moi matchOrIgnore // is this a match or an ignore pattern
 }
 
 func shouldKeepPath(path string, ps []pattern) bool {
@@ -89,14 +89,19 @@ func shouldKeepPath(path string, ps []pattern) bool {
 		return true
 	}
 
-	// Ignore patterns
+	keep := false
+	hasMatch := false
 	for _, p := range ps {
-		match, _ := filepath.Match(p.pat, path)
-		if match && p.discard {
+		m, _ := filepath.Match(p.pat, path)
+		if m && p.moi == ignore {
 			return false
 		}
+		if p.moi == match {
+			hasMatch = true
+			keep = keep || m
+		}
 	}
-	return true
+	return !hasMatch || keep
 }
 
 // The Ignore option allows to ignore files matching a pattern. The path
@@ -107,16 +112,43 @@ func shouldKeepPath(path string, ps []pattern) bool {
 // package.
 //
 // Ignore can be provided multiple times to ignore multiple patterns. A file is
-// then ignored as soon as its path matches one pattern.
+// ignored from the listing as long as at it matches at least one Ignore
+// pattern. Also, Ignore has precedence over Match.
 type Ignore string
 
 func (i Ignore) apply(cfg *config) error {
 	if _, err := filepath.Match(string(i), "/"); err != nil {
 		return fmt.Errorf("invalid ignore pattern %v: %v", i, err)
 	}
-	cfg.globs = append(cfg.globs, pattern{pat: string(i), discard: true})
+	cfg.globs = append(cfg.globs, pattern{pat: string(i), moi: ignore})
 	return nil
 }
+
+// The Match option limits the listing to files that match a pattern. The path
+// relative to the chosen root is matched against the pattern. Match follows the
+// syntax used and described with the filepath.Match function. Before checking
+// if it matches a pattern, a path is first converted to its slash ('/') based
+// version, to ensure cross-platform consistency of the dirtree package.
+//
+// Match can be provided multiple times to match multiple patterns. A file is
+// included in the listing as long as at it matches at least one Match pattern,
+// unless it matches an Ignore pattern (since Ignore has precedence over Match).
+type Match string
+
+func (m Match) apply(cfg *config) error {
+	if _, err := filepath.Match(string(m), "/"); err != nil {
+		return fmt.Errorf("invalid match pattern %v: %v", m, err)
+	}
+	cfg.globs = append(cfg.globs, pattern{pat: string(m), moi: match})
+	return nil
+}
+
+type matchOrIgnore bool
+
+const (
+	match  matchOrIgnore = true
+	ignore matchOrIgnore = false
+)
 
 // The Depth option indicates how many levels of directories below root should
 // we recurse into. 0, the default, means there's no limit.
