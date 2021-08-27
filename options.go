@@ -8,7 +8,7 @@ import (
 type config struct {
 	mode     PrintMode
 	showRoot bool
-	ignore   []string
+	globs    []pattern
 	depth    int
 	types    filetype
 }
@@ -16,7 +16,7 @@ type config struct {
 var defaultCfg = config{
 	mode:     ModeDefault,
 	showRoot: true,
-	ignore:   nil,
+	globs:    nil,
 	depth:    int(infiniteDepth),
 	types:    typeFile | typeDir | typeOther,
 }
@@ -79,6 +79,26 @@ func (in IncludeRoot) apply(cfg *config) error {
 	return nil
 }
 
+type pattern struct {
+	pat     string // pattern matched against
+	discard bool   // indicates whether the file is discarded if it matches the pattern
+}
+
+func shouldKeepPath(path string, ps []pattern) bool {
+	if ps == nil {
+		return true
+	}
+
+	// Ignore patterns
+	for _, p := range ps {
+		match, _ := filepath.Match(p.pat, path)
+		if match && p.discard {
+			return false
+		}
+	}
+	return true
+}
+
 // The Ignore option defines a pattern allowing to ignore certain files to be
 // printed, depending on their relative path, with respect to the chosen root.
 // Ignore follows the syntax used and described with the filepath.Match
@@ -92,7 +112,7 @@ func (i Ignore) apply(cfg *config) error {
 	if _, err := filepath.Match(string(i), "/"); err != nil {
 		return fmt.Errorf("invalid ignore pattern %v: %v", i, err)
 	}
-	cfg.ignore = append(cfg.ignore, string(i))
+	cfg.globs = append(cfg.globs, pattern{pat: string(i), discard: true})
 	return nil
 }
 
