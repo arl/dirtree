@@ -8,9 +8,9 @@
 Dirtree
 ========
 
-**Dirtree** lists the files in a directory or a fs.FS in a determinstic, configurable and cross-platform manner.
+**Dirtree** lists the files in a directory, or an [fs.FS](https://pkg.go.dev/io/fs#FS), in a deterministic, configurable and cross-platform manner.
 
-Very useful for testing.
+Very useful for testing, golden files, etc.
 
 
 Usage
@@ -32,10 +32,21 @@ if err != nil {
 }
 ```
 
-You can pass mutiple options to control `dirtree`'s behavior and the information
-it prints for each file.
+Using options, you can control what files are listed and what information is shown (size, CRC32, type, etc.).
 
-## Documentation
+
+# Documentation
+
+## Walk your OS filesystem or an [`fs.FS`](https://pkg.go.dev/io/fs#FS)?
+
+Use `dirtree.Write` and `dirtree.Sprint` to walk your filesystem, or,  
+use `dirtree.WriteFS` and `dirtree.SprintFS` to walk an [fs.FS](https://pkg.go.dev/io/fs#FS).  
+They all accept a variable number (possibly none) of options. For example:
+
+```go
+dirtree.Write(os.Stdout, "dir", dirtree.Depth(2), dirtree.ModeSize | dirtree.ModeCRC32)
+
+```
 
 In the following examples the root directory has the following content:
 ```
@@ -57,23 +68,9 @@ In the following examples the root directory has the following content:
 └── symlink -> foo/dir2/secrets
 ```
 
-## Filesystem agnostic: use either the OS filesystem or an [`fs.FS`](https://pkg.go.dev/io/fs#FS)
-
-`dirtree.Write` and `dirtree.Sprint` walks the filesystem of your operating
-system, however you can walks a `fs.FS` with `dirtree.WriteFS` and `dirtree.SprintFS`.
 
 
-## Options
-
-`dirtree.Write`, `dirtree.Sprint`, `dirtree.WriteFS` and `dirtree.SprintFS` all
-accepts a variable (possibly 0) number of options. For example:
-
-```go
-dirtree.Write(os.Stdout, "dir", dirtree.Depth(2), dirtree.ModeSize | dirtree.ModeCRC32)
-```
-
-
-### Default output
+### Default output (no options)
 
 Calling `dirtree.Write` without any option will show, as in:
 ```go
@@ -100,7 +97,7 @@ f 39166b     other-stuff.mp3
 ```
 
 
-### Type option
+### `Type` option
 
 The `dirtree.Type` option limits the files present in the listing based on their types.
 It's a string that may contain one or more characters:
@@ -129,7 +126,7 @@ f 39166b     crc=d298754e other-stuff.mp3
 
 
 
-### PrintMode option
+### `PrintMode` option
 
 The `dirtree.PrintMode` option is a bitset controlling the amount of information
 to show for each listed file.
@@ -168,7 +165,7 @@ f 39166b     crc=d298754e other-stuff.mp3
 ?            crc=n/a      symlink
 ```
 
-### Ignore files
+### `Ignore` files
 
 The `dirtree.Ignore` option allows to ignore files matching a pattern. The path
 relative to the chosen root is matched against the pattern. Ignore follows the
@@ -221,7 +218,7 @@ f 39166b     other-stuff.mp3
 ```
 
 
-### Limit the listing for files matching a pattern
+### `Match` to limit the listing to files matching a pattern
 
 The `dirtree.Match` option limits the listing to files that match a pattern. The
 path relative to the chosen root is matched against the pattern. `dirtree.Match`
@@ -249,7 +246,7 @@ f 39166b     other-stuff.mp3
 ```
 
 
-### Limit depth
+### Directory `Depth`
 
 The `dirtree.Depth` option is an integer that controls the maximum depth to
 descend into, starting from the root directory. Everything below that depth
@@ -269,7 +266,7 @@ f 39166b     other-stuff.mp3
 ?            symlink
 ```
 
-### ExcludeRoot
+### `ExcludeRoot`
 
 `dirtree.ExcludeRoot` hides the root directory in the listing.
 ```go
