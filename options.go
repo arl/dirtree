@@ -27,17 +27,6 @@ type Option interface {
 	apply(*config) error
 }
 
-// A PrintMode represents the amount of information to print about a file, next
-// to its filename. PrintMode is a bit set.
-// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
-type PrintMode uint32
-
-// implements the Option interface.
-func (m PrintMode) apply(cfg *config) error {
-	cfg.mode = m
-	return nil
-}
-
 // The Type option limits the files to list based their type.
 // Type can be formed of one or more of:
 //  'f' for regular files
