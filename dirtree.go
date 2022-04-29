@@ -12,6 +12,19 @@ import (
 	"strings"
 )
 
+// List walks the directory rooted at root in the given filesystem and returns
+// entries.
+//
+// A variable number of options can be provided to control the limit the files
+// printed and/or the amount of information gathered for each of them.
+func List(fsys fs.FS, root string, opts ...Option) ([]*Entry, error) {
+	entries, err := walkTree(root, fsys, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("dirtree: %v", err)
+	}
+	return entries, nil
+}
+
 // WriteFS walks the directory rooted at root in the given filesystem and prints
 // one file per line into w.
 //
