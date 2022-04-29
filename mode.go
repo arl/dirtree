@@ -32,36 +32,47 @@ const (
 	ModeAll PrintMode = ModeType | ModeSize | ModeCRC32
 )
 
-type filetype byte
+// A PrintMode represents the amount of information to print about a file, next
+// to its filename. PrintMode is a bit set.
+// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
+type PrintMode uint32
+
+// implements the Option interface.
+func (m PrintMode) apply(cfg *config) error {
+	cfg.mode = m
+	return nil
+}
+
+type FileType byte
 
 const (
-	typeFile  filetype = 1 << iota // a regular file
-	typeDir                        // a directory
-	typeOther                      // anything else (symlink, whatever, ...)
+	File  FileType = 1 << iota // File is for regular files
+	Dir                        // Dir is for directories
+	Other                      // Other is for anything else (symlink, whatever, ...)
 )
 
 // byte returns the printable char corresponding to ft.
-func (ft filetype) char() byte {
+func (ft FileType) char() byte {
 	switch ft {
-	case typeDir:
+	case Dir:
 		return 'd'
-	case typeFile:
+	case File:
 		return 'f'
-	case typeOther:
+	case Other:
 		return '?'
 	}
-	panic(fmt.Sprintf("filetype.Char(): unexpected filetype value: %d", ft))
+	panic(fmt.Sprintf("FileType.Char(): unexpected FileType value: %d", ft))
 }
 
-func ftype(dirent fs.DirEntry) filetype {
+func filetypeFromDirEntry(dirent fs.DirEntry) FileType {
 	typ := dirent.Type()
 	if typ.IsRegular() {
-		return typeFile
+		return File
 	}
 	if typ.Type() == fs.ModeDir {
-		return typeDir
+		return Dir
 	}
-	return typeOther
+	return Other
 }
 
 // we pad the size to sizeDigits, with spaces, so that for most filenames all
@@ -69,8 +80,8 @@ func ftype(dirent fs.DirEntry) filetype {
 // just to respect that rule, we're making an exception in those cases.
 const sizeDigits = 9
 
-func formatSize(ft filetype, size int64) string {
-	if ft != typeFile {
+func formatSize(ft FileType, size int64) string {
+	if ft != File {
 		return fmt.Sprintf("%-*s", sizeDigits+1, "")
 	}
 	str := strconv.FormatInt(size, 10) + "b"
@@ -80,10 +91,6 @@ func formatSize(ft filetype, size int64) string {
 
 	return fmt.Sprintf("%-*s", sizeDigits+1, str)
 }
-
-// buffer used in io.CopyBUffer to reduce allocations
-// while calculating the file checksum.
-var iobuf [32 * 1024]byte
 
 // number of chars in hexadecimal representation of a CRC-32.
 const crcChars = crc32.Size * 2 // 2 since 2 chars per raw byte
@@ -109,7 +116,7 @@ func checksum(fsys fs.FS, path string) (chksum string) {
 
 	h := crc32.NewIEEE()
 	defer f.Close()
-	if _, err := io.CopyBuffer(h, f, iobuf[:]); err != nil {
+	if _, err := io.Copy(h, f); err != nil {
 		panic(err)
 	}
 
@@ -117,19 +124,59 @@ func checksum(fsys fs.FS, path string) (chksum string) {
 	return
 }
 
+const na = "n/a"
+
 func checksumNA() string {
-	const na = "n/a"
 	return fmt.Sprintf("%-*s", crcChars, na)
 }
 
-// format returns the file at fullpath, following the current print mode.
-func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format string, err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = e.(error)
-		}
-	}()
+// An Entry holds gathered information about a particular file.
+type Entry struct {
+	Path     string
+	RelPath  string
+	Type     FileType
+	Size     int64
+	Checksum string
 
+	mode PrintMode
+}
+
+func newEntry(mode PrintMode, fsys fs.FS, fullpath string, ft FileType) (*Entry, error) {
+	ent := &Entry{
+		mode: mode,
+		Type: ft,
+	}
+
+	if mode&ModeSize != 0 {
+		var (
+			fi  fs.FileInfo
+			err error
+		)
+		if fsys == nil {
+			fi, err = os.Stat(fullpath)
+		} else {
+			fi, err = fs.Stat(fsys, fullpath)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to get size of %v: %v", fullpath, err)
+		}
+		ent.Size = fi.Size()
+	}
+
+	if mode&ModeCRC32 != 0 {
+		if ft != File {
+			ent.Checksum = na
+		} else {
+			ent.Checksum = checksum(fsys, fullpath)
+		}
+	}
+
+	return ent, nil
+}
+
+// Format returns a summary string of e. Some information might be missing,
+// depending on the PrintMode used to create the Entry.
+func (e *Entry) Format() string {
 	var sb strings.Builder
 
 	// Separate successive mode expressions
@@ -139,38 +186,27 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format s
 		}
 	}
 
-	if mode&ModeType != 0 {
+	if e.mode&ModeType != 0 {
 		sep()
-		sb.WriteByte(ft.char())
+		sb.WriteByte(e.Type.char())
 	}
 
-	if mode&ModeSize != 0 {
+	if e.mode&ModeSize != 0 {
 		sep()
-
-		var fi fs.FileInfo
-		if fsys == nil {
-			fi, err = os.Stat(fullpath)
-		} else {
-			fi, err = fs.Stat(fsys, fullpath)
-		}
-		if err != nil {
-			return "", fmt.Errorf("failed to get size of %v: %v", fullpath, err)
-		}
-
-		sb.WriteString(formatSize(ft, fi.Size()))
+		sb.WriteString(formatSize(e.Type, e.Size))
 	}
 
-	if mode&ModeCRC32 != 0 {
+	if e.mode&ModeCRC32 != 0 {
 		sep()
 		sb.WriteString("crc=")
-		if ft != typeFile {
+		if e.Type != File {
 			sb.WriteString(checksumNA())
 		} else {
-			sb.WriteString(checksum(fsys, fullpath))
+			sb.WriteString(e.Checksum)
 		}
 	}
 
 	// Add a separator (if necessary)
 	sep()
-	return sb.String(), nil
+	return sb.String()
 }
