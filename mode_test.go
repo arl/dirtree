@@ -6,7 +6,7 @@ import (
 	"testing/fstest"
 )
 
-func TestPrintMode_format(t *testing.T) {
+func TestEntryFormat(t *testing.T) {
 	root := filepath.Join("testdata", "dir")
 	dirA := filepath.Join(root, "A")
 	file1 := filepath.Join(root, "A", "file1")
@@ -93,12 +93,16 @@ func TestPrintMode_format(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.mode.format(nil, tt.fullpath, tt.ft)
+			ent, err := newEntry(tt.mode, nil, tt.fullpath, tt.ft)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("PrintMode.format() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("newEntry() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			if tt.wantErr {
+				return
+			}
+
+			if got := ent.Format(); got != tt.want {
 				t.Errorf("format error\ngot :%q\nwant:%q", got, tt.want)
 			}
 		})

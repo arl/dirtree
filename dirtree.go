@@ -111,11 +111,12 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 			return nil
 		}
 
-		line, err := cfg.mode.format(fsys, fullpath, ft)
+		ent, err := newEntry(cfg.mode, fsys, fullpath, ft)
 		if err != nil {
-			return fmt.Errorf("can't format %s: %s", fullpath, err)
+			return fmt.Errorf("can't create Entry for %s: %s", fullpath, err)
 		}
-		if _, err = bufw.WriteString(line); err != nil {
+
+		if _, err = bufw.WriteString(ent.Format()); err != nil {
 			return err
 		}
 

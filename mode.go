@@ -124,19 +124,58 @@ func checksum(fsys fs.FS, path string) (chksum string) {
 	return
 }
 
+const na = "n/a"
+
 func checksumNA() string {
-	const na = "n/a"
 	return fmt.Sprintf("%-*s", crcChars, na)
 }
 
-// format returns the file at fullpath, following the current print mode.
-func (mode PrintMode) format(fsys fs.FS, fullpath string, ft FileType) (format string, err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = e.(error)
-		}
-	}()
+// An Entry holds gathered information about a particular file.
+type Entry struct {
+	Path     string
+	Type     FileType
+	Size     int64
+	Checksum string
 
+	mode PrintMode
+}
+
+func newEntry(mode PrintMode, fsys fs.FS, fullpath string, ft FileType) (*Entry, error) {
+	ent := &Entry{
+		mode: mode,
+		Type: ft,
+	}
+
+	if mode&ModeSize != 0 {
+		var (
+			fi  fs.FileInfo
+			err error
+		)
+		if fsys == nil {
+			fi, err = os.Stat(fullpath)
+		} else {
+			fi, err = fs.Stat(fsys, fullpath)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to get size of %v: %v", fullpath, err)
+		}
+		ent.Size = fi.Size()
+	}
+
+	if mode&ModeCRC32 != 0 {
+		if ft != File {
+			ent.Checksum = na
+		} else {
+			ent.Checksum = checksum(fsys, fullpath)
+		}
+	}
+
+	return ent, nil
+}
+
+// Format returns a summary string of e. Some information might be missing,
+// depending on the PrintMode used to create the Entry.
+func (e *Entry) Format() string {
 	var sb strings.Builder
 
 	// Separate successive mode expressions
@@ -146,38 +185,27 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, ft FileType) (format s
 		}
 	}
 
-	if mode&ModeType != 0 {
+	if e.mode&ModeType != 0 {
 		sep()
-		sb.WriteByte(ft.char())
+		sb.WriteByte(e.Type.char())
 	}
 
-	if mode&ModeSize != 0 {
+	if e.mode&ModeSize != 0 {
 		sep()
-
-		var fi fs.FileInfo
-		if fsys == nil {
-			fi, err = os.Stat(fullpath)
-		} else {
-			fi, err = fs.Stat(fsys, fullpath)
-		}
-		if err != nil {
-			return "", fmt.Errorf("failed to get size of %v: %v", fullpath, err)
-		}
-
-		sb.WriteString(formatSize(ft, fi.Size()))
+		sb.WriteString(formatSize(e.Type, e.Size))
 	}
 
-	if mode&ModeCRC32 != 0 {
+	if e.mode&ModeCRC32 != 0 {
 		sep()
 		sb.WriteString("crc=")
-		if ft != File {
+		if e.Type != File {
 			sb.WriteString(checksumNA())
 		} else {
-			sb.WriteString(checksum(fsys, fullpath))
+			sb.WriteString(e.Checksum)
 		}
 	}
 
 	// Add a separator (if necessary)
 	sep()
-	return sb.String(), nil
+	return sb.String()
 }
