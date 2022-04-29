@@ -41,11 +41,17 @@ Using options, you can control what files are listed and what information is sho
 
 Use `dirtree.Write` and `dirtree.Sprint` to walk your filesystem, or,  
 use `dirtree.WriteFS` and `dirtree.SprintFS` to walk an [fs.FS](https://pkg.go.dev/io/fs#FS).  
-They all accept a variable number (possibly none) of options. For example:
+These functions are useful when you're interested by the whole directory
+listing, to use for golden tests or displaying to user.
+
+If you don't need to print the directory tree, you can use `dirtree.List`, it
+returns a slice of `dirtree.Entry` which you can examine programmaticaly.
+
+All above functions accept a variable number (possibly none) of options.
+For example:
 
 ```go
 dirtree.Write(os.Stdout, "dir", dirtree.Depth(2), dirtree.ModeSize | dirtree.ModeCRC32)
-
 ```
 
 In the following examples the root directory has the following content:
@@ -67,7 +73,6 @@ In the following examples the root directory has the following content:
 ├── other-stuff.mp3
 └── symlink -> foo/dir2/secrets
 ```
-
 
 
 ### Default output (no options)
@@ -295,8 +300,6 @@ f 39166b     other-stuff.mp3
 
 
 ## TODO
-
- - API to retrieve the list of files and their dirtree attributes in a simple way
  - streaming API (for large number of files)
 
 License
