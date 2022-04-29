@@ -92,10 +92,6 @@ func formatSize(ft filetype, size int64) string {
 	return fmt.Sprintf("%-*s", sizeDigits+1, str)
 }
 
-// buffer used in io.CopyBUffer to reduce allocations
-// while calculating the file checksum.
-var iobuf [32 * 1024]byte
-
 // number of chars in hexadecimal representation of a CRC-32.
 const crcChars = crc32.Size * 2 // 2 since 2 chars per raw byte
 
@@ -120,7 +116,7 @@ func checksum(fsys fs.FS, path string) (chksum string) {
 
 	h := crc32.NewIEEE()
 	defer f.Close()
-	if _, err := io.CopyBuffer(h, f, iobuf[:]); err != nil {
+	if _, err := io.Copy(h, f); err != nil {
 		panic(err)
 	}
 
