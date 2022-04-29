@@ -133,6 +133,7 @@ func checksumNA() string {
 // An Entry holds gathered information about a particular file.
 type Entry struct {
 	Path     string
+	RelPath  string
 	Type     FileType
 	Size     int64
 	Checksum string

@@ -18,7 +18,14 @@ import (
 // A variable number of options can be provided to control the limit the files
 // printed and/or the amount of information printed for each of them.
 func WriteFS(w io.Writer, fsys fs.FS, root string, opts ...Option) error {
-	return write(w, root, fsys, opts...)
+	entries, err := walkTree(root, fsys, opts...)
+	if err != nil {
+		return fmt.Errorf("dirtree: %v", err)
+	}
+	if err := writeEntries(w, entries); err != nil {
+		return fmt.Errorf("dirtree: %v", err)
+	}
+	return nil
 }
 
 // Write walks the directory rooted at root and prints one file per line into w.
@@ -49,20 +56,41 @@ func Sprint(root string, opts ...Option) (string, error) {
 	return SprintFS(nil, root, opts...)
 }
 
-// write walks through all files of fsys, starting at root. Use actual
-// filesystem if fsys is nil.
-func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
+func writeEntries(w io.Writer, entries []*Entry) error {
+	bufw := bufio.NewWriter(w)
+
+	for _, ent := range entries {
+		if _, err := bufw.WriteString(ent.Format()); err != nil {
+			return err
+		}
+
+		// Write path
+		if _, err := bufw.WriteString(ent.RelPath); err != nil {
+			return err
+		}
+		bufw.WriteByte('\n')
+	}
+
+	if err := bufw.Flush(); err != nil {
+		return fmt.Errorf("can't write output: %s", err)
+	}
+	return nil
+}
+
+// walkTree walks through all files of fsys, starting at root, and returns the
+// files, in the order they're met, as entries. Use actual filesystem if fsys is
+// nil.
+func walkTree(root string, fsys fs.FS, opts ...Option) ([]*Entry, error) {
 	// Configure the walk
 	cfg := defaultCfg
 	for _, o := range opts {
 		if err := o.apply(&cfg); err != nil {
-			return fmt.Errorf("dirtree: configuration error: %v", err)
+			return nil, fmt.Errorf("configuration error: %v", err)
 		}
 	}
 
 	walkdir := fs.WalkDir
 	seenRoot := false
-	bufw := bufio.NewWriter(w)
 
 	if fsys == nil {
 		walkdir = func(_ fs.FS, root string, fn fs.WalkDirFunc) error {
@@ -70,6 +98,7 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		}
 	}
 
+	entries := make([]*Entry, 0, 128)
 	// Do walk
 	walk := func(fullpath string, dirent fs.DirEntry, err error) error {
 		if err != nil {
@@ -115,24 +144,14 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		if err != nil {
 			return fmt.Errorf("can't create Entry for %s: %s", fullpath, err)
 		}
+		ent.RelPath = rel
 
-		if _, err = bufw.WriteString(ent.Format()); err != nil {
-			return err
-		}
-
-		// Write path
-		if _, err = bufw.WriteString(rel); err != nil {
-			return err
-		}
-		return bufw.WriteByte('\n')
+		entries = append(entries, ent)
+		return nil
 	}
 
 	if err := walkdir(fsys, root, walk); err != nil {
-		return fmt.Errorf("dirtree: error walking directory: %v", err)
+		return nil, fmt.Errorf("error walking directory: %v", err)
 	}
-
-	if err := bufw.Flush(); err != nil {
-		return fmt.Errorf("dirtree: can't write output: %s", err)
-	}
-	return nil
+	return entries, nil
 }
