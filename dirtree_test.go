@@ -226,7 +226,7 @@ func TestSprintFS(t *testing.T) {
 func BenchmarkWrite(b *testing.B) {
 	/*
 		This benchmarks runs on a directory structure of 11110 directories and
-		11110 files, filled with 1024byte of random data, created with:
+		11110 files, filled with 1024b of random data, created with:
 
 		ulimit -S -n 20000
 		cd $(mktemp -d)

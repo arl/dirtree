@@ -10,17 +10,6 @@ import (
 	"strings"
 )
 
-// A PrintMode represents the amount of information to print about a file, next
-// to its filename. PrintMode is a bit set.
-// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
-type PrintMode uint32
-
-// implements the Option interface.
-func (m PrintMode) apply(cfg *config) error {
-	cfg.mode = m
-	return nil
-}
-
 const (
 	// ModeType indicates if file is a directory, a regular file or something
 	// else. It prints 'd', 'f' or '?' respectively.
@@ -42,6 +31,17 @@ const (
 	// ModeAll is a mask showing all information about a file.
 	ModeAll PrintMode = ModeType | ModeSize | ModeCRC32
 )
+
+// A PrintMode represents the amount of information to print about a file, next
+// to its filename. PrintMode is a bit set.
+// Somewhat related to os.FileMode and fs.FileMode but much less detailed.
+type PrintMode uint32
+
+// implements the Option interface.
+func (m PrintMode) apply(cfg *config) error {
+	cfg.mode = m
+	return nil
+}
 
 type filetype byte
 
