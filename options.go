@@ -10,7 +10,7 @@ type config struct {
 	showRoot bool
 	globs    []pattern
 	depth    int
-	types    filetype
+	types    FileType
 }
 
 var defaultCfg = config{
@@ -18,7 +18,7 @@ var defaultCfg = config{
 	showRoot: true,
 	globs:    nil,
 	depth:    int(infiniteDepth),
-	types:    typeFile | typeDir | typeOther,
+	types:    File | Dir | Other,
 }
 
 // Option is the interface implemented by dirtree types used to control what to
@@ -39,17 +39,17 @@ func (t Type) apply(cfg *config) error {
 		return fmt.Errorf("invalid Type: at least one type must be listed")
 	}
 
-	var types filetype
+	var types FileType
 	for _, r := range string(t) {
 		switch r {
-		case rune(typeFile.char()):
-			types |= typeFile
-		case rune(typeDir.char()):
-			types |= typeDir
-		case rune(typeOther.char()):
-			types |= typeOther
+		case rune(File.char()):
+			types |= File
+		case rune(Dir.char()):
+			types |= Dir
+		case rune(Other.char()):
+			types |= Other
 		default:
-			return fmt.Errorf("invalid Type char %c, must be %c, %c or %c", r, typeFile.char(), typeDir.char(), typeOther.char())
+			return fmt.Errorf("invalid Type char %c, must be %c, %c or %c", r, File.char(), Dir.char(), Other.char())
 		}
 	}
 	cfg.types = types

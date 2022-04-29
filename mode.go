@@ -43,36 +43,36 @@ func (m PrintMode) apply(cfg *config) error {
 	return nil
 }
 
-type filetype byte
+type FileType byte
 
 const (
-	typeFile  filetype = 1 << iota // a regular file
-	typeDir                        // a directory
-	typeOther                      // anything else (symlink, whatever, ...)
+	File  FileType = 1 << iota // File is for regular files
+	Dir                        // Dir is for directories
+	Other                      // Other is for anything else (symlink, whatever, ...)
 )
 
 // byte returns the printable char corresponding to ft.
-func (ft filetype) char() byte {
+func (ft FileType) char() byte {
 	switch ft {
-	case typeDir:
+	case Dir:
 		return 'd'
-	case typeFile:
+	case File:
 		return 'f'
-	case typeOther:
+	case Other:
 		return '?'
 	}
-	panic(fmt.Sprintf("filetype.Char(): unexpected filetype value: %d", ft))
+	panic(fmt.Sprintf("FileType.Char(): unexpected FileType value: %d", ft))
 }
 
-func ftype(dirent fs.DirEntry) filetype {
+func filetypeFromDirEntry(dirent fs.DirEntry) FileType {
 	typ := dirent.Type()
 	if typ.IsRegular() {
-		return typeFile
+		return File
 	}
 	if typ.Type() == fs.ModeDir {
-		return typeDir
+		return Dir
 	}
-	return typeOther
+	return Other
 }
 
 // we pad the size to sizeDigits, with spaces, so that for most filenames all
@@ -80,8 +80,8 @@ func ftype(dirent fs.DirEntry) filetype {
 // just to respect that rule, we're making an exception in those cases.
 const sizeDigits = 9
 
-func formatSize(ft filetype, size int64) string {
-	if ft != typeFile {
+func formatSize(ft FileType, size int64) string {
+	if ft != File {
 		return fmt.Sprintf("%-*s", sizeDigits+1, "")
 	}
 	str := strconv.FormatInt(size, 10) + "b"
@@ -130,7 +130,7 @@ func checksumNA() string {
 }
 
 // format returns the file at fullpath, following the current print mode.
-func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format string, err error) {
+func (mode PrintMode) format(fsys fs.FS, fullpath string, ft FileType) (format string, err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
@@ -170,7 +170,7 @@ func (mode PrintMode) format(fsys fs.FS, fullpath string, ft filetype) (format s
 	if mode&ModeCRC32 != 0 {
 		sep()
 		sb.WriteString("crc=")
-		if ft != typeFile {
+		if ft != File {
 			sb.WriteString(checksumNA())
 		} else {
 			sb.WriteString(checksum(fsys, fullpath))

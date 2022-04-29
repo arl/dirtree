@@ -77,7 +77,7 @@ func write(w io.Writer, root string, fsys fs.FS, opts ...Option) error {
 		}
 
 		// Skip based on type
-		ft := ftype(dirent)
+		ft := filetypeFromDirEntry(dirent)
 		if cfg.types&ft == 0 {
 			return nil
 		}
