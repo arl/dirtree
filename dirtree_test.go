@@ -223,6 +223,63 @@ func TestSprintFS(t *testing.T) {
 	}
 }
 
+func TestList(t *testing.T) {
+	fsys := fstest.MapFS{
+		"A/file1":     &fstest.MapFile{Data: []byte("dummy content")},
+		"A/symfile1":  &fstest.MapFile{Mode: fs.ModeSymlink},
+		"A/B/symdirA": &fstest.MapFile{Mode: fs.ModeSymlink | fs.ModeDir},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			list, err := ListFS(fsys, ".", tt.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ListFS() error = %v, wantErr = %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
+
+			if len(list) != len(tt.want) {
+				t.Fatalf("got %d files, want %d", len(list), len(tt.want))
+			}
+
+			for i, f := range list {
+				if got := f.Format() + f.RelPath; got != tt.want[i] {
+					t.Errorf("format(%d) = %q, want %q", i, got, tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestListEntry(t *testing.T) {
+	list, err := List(filepath.Join("testdata", "dir"), ModeAll)
+	if err != nil {
+		t.Errorf("ListFS() error = %v", err)
+		return
+	}
+
+	if len(list) != 6 {
+		t.Fatalf("got %d files, want %d", len(list), 6)
+	}
+
+	want := []Entry{
+		{Path: "testdata/dir", RelPath: "."},
+		{Path: "testdata/dir/A", RelPath: "A"},
+		{Path: "testdata/dir/A/B", RelPath: "A/B"},
+		{Path: "testdata/dir/A/B/symdirA", RelPath: "A/B/symdirA"},
+		{Path: "testdata/dir/A/file1", RelPath: "A/file1"},
+		{Path: "testdata/dir/A/symfile1", RelPath: "A/symfile1"},
+	}
+	for i, f := range list {
+		if f.Path != want[i].Path || f.RelPath != want[i].RelPath {
+			t.Errorf("Entry[%d] = (path=%q, relpath=%q), want (path=%q, relpath=%q)", i, f.Path, f.RelPath, want[i].Path, want[i].RelPath)
+		}
+	}
+}
+
 func BenchmarkWrite(b *testing.B) {
 	/*
 		This benchmarks runs on a directory structure of 11110 directories and

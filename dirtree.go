@@ -17,11 +17,7 @@ import (
 // A variable number of options can be provided to control the limit the files
 // printed and/or the amount of information gathered for each of them.
 func List(root string, opts ...Option) ([]*Entry, error) {
-	entries, err := walkTree(root, nil, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("dirtree: %v", err)
-	}
-	return entries, nil
+	return ListFS(nil, root, opts...)
 }
 
 // List walks the directory rooted at root in the given filesystem and returns
@@ -170,6 +166,7 @@ func walkTree(root string, fsys fs.FS, opts ...Option) ([]*Entry, error) {
 			return fmt.Errorf("can't create Entry for %s: %s", fullpath, err)
 		}
 		ent.RelPath = rel
+		ent.Path = fullpath
 
 		entries = append(entries, ent)
 		return nil
