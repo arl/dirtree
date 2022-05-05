@@ -166,7 +166,7 @@ func walkTree(root string, fsys fs.FS, opts ...Option) ([]*Entry, error) {
 			return fmt.Errorf("can't create Entry for %s: %s", fullpath, err)
 		}
 		ent.RelPath = rel
-		ent.Path = fullpath
+		ent.Path = filepath.ToSlash(fullpath)
 
 		entries = append(entries, ent)
 		return nil
